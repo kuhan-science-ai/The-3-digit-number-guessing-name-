@@ -6,6 +6,9 @@ const dom = {
   statusText: document.getElementById("statusText"),
   historyList: document.getElementById("historyList"),
   attemptCount: document.getElementById("attemptCount"),
+  winCelebration: document.getElementById("winCelebration"),
+  celebrationText: document.getElementById("celebrationText"),
+  celebrationCloseBtn: document.getElementById("celebrationCloseBtn"),
 };
 
 let secretNumber = generateSecretNumber();
@@ -16,6 +19,7 @@ init();
 function init() {
   dom.guessForm.addEventListener("submit", handleGuessSubmit);
   dom.newGameBtn.addEventListener("click", resetGame);
+  dom.celebrationCloseBtn.addEventListener("click", hideCelebration);
   dom.guessInput.focus();
 }
 
@@ -37,6 +41,7 @@ function handleGuessSubmit(event) {
 
   if (guess === secretNumber) {
     setStatus(`You guessed it. The secret number was ${secretNumber}.`, "status-win");
+    showCelebration(secretNumber, attempts);
     dom.guessInput.value = "";
     dom.guessInput.disabled = true;
     dom.guessButton.disabled = true;
@@ -51,6 +56,7 @@ function handleGuessSubmit(event) {
 function resetGame() {
   secretNumber = generateSecretNumber();
   attempts = 0;
+  hideCelebration();
   dom.guessInput.disabled = false;
   dom.guessButton.disabled = false;
   dom.guessInput.value = "";
@@ -150,4 +156,21 @@ function updateAttemptCount() {
 function setStatus(text, className) {
   dom.statusText.textContent = text;
   dom.statusText.className = className;
+}
+
+function showCelebration(secret, totalAttempts) {
+  if (!dom.winCelebration || !dom.celebrationText) {
+    return;
+  }
+
+  dom.celebrationText.textContent = `The secret number was ${secret}. You solved it in ${totalAttempts} ${totalAttempts === 1 ? "attempt" : "attempts"}.`;
+  dom.winCelebration.hidden = false;
+}
+
+function hideCelebration() {
+  if (!dom.winCelebration) {
+    return;
+  }
+
+  dom.winCelebration.hidden = true;
 }

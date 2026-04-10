@@ -34,6 +34,69 @@ body::before {
   pointer-events: none;
 }
 
+.celebration {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  background: rgba(31, 42, 46, 0.22);
+  backdrop-filter: blur(4px);
+}
+
+.celebration[hidden] {
+  display: none !important;
+}
+
+.celebration-card {
+  position: relative;
+  z-index: 1;
+  width: min(460px, calc(100% - 32px));
+  padding: 28px;
+  text-align: center;
+  background: #fffaf0;
+  border: 1px solid rgba(49, 87, 76, 0.14);
+  box-shadow: 0 28px 60px rgba(49, 38, 24, 0.2);
+}
+
+.celebration-card h2 {
+  margin-top: 10px;
+}
+
+.celebration-text {
+  margin: 14px 0 20px;
+  color: var(--muted);
+  line-height: 1.75;
+}
+
+.celebration-confetti {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.celebration-confetti span {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  animation: confetti-fall 1.6s ease-in-out infinite;
+}
+
+.celebration-confetti span:nth-child(1) { left: 10%; top: 8%; background: #d8a74a; animation-delay: 0s; }
+.celebration-confetti span:nth-child(2) { left: 18%; top: 4%; background: #31574c; animation-delay: 0.15s; }
+.celebration-confetti span:nth-child(3) { left: 28%; top: 10%; background: #d45f3f; animation-delay: 0.3s; }
+.celebration-confetti span:nth-child(4) { left: 38%; top: 6%; background: #3d7cc9; animation-delay: 0.45s; }
+.celebration-confetti span:nth-child(5) { left: 48%; top: 12%; background: #d8a74a; animation-delay: 0.6s; }
+.celebration-confetti span:nth-child(6) { left: 58%; top: 5%; background: #31574c; animation-delay: 0.75s; }
+.celebration-confetti span:nth-child(7) { left: 66%; top: 9%; background: #d45f3f; animation-delay: 0.9s; }
+.celebration-confetti span:nth-child(8) { left: 74%; top: 3%; background: #3d7cc9; animation-delay: 1.05s; }
+.celebration-confetti span:nth-child(9) { left: 82%; top: 11%; background: #d8a74a; animation-delay: 1.2s; }
+.celebration-confetti span:nth-child(10) { left: 22%; top: 14%; background: #31574c; animation-delay: 1.35s; }
+.celebration-confetti span:nth-child(11) { left: 52%; top: 16%; background: #d45f3f; animation-delay: 1.5s; }
+.celebration-confetti span:nth-child(12) { left: 88%; top: 7%; background: #3d7cc9; animation-delay: 1.65s; }
+
 .page-shell {
   min-height: 100vh;
   display: grid;
@@ -258,6 +321,20 @@ h1 {
 
 .status-hint {
   color: var(--ink);
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(0) scale(0.8) rotate(0deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(180px) scale(1.1) rotate(220deg);
+    opacity: 0;
+  }
 }
 
 @media (max-width: 900px) {
