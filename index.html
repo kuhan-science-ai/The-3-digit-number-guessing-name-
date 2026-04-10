@@ -66,6 +66,18 @@
           <span id="attemptCount" class="attempt-badge">0 attempts</span>
         </div>
 
+        <section class="auth-panel">
+          <div class="auth-copy">
+            <p class="mini-label">Player access</p>
+            <h3 id="authTitle">Sign in to play</h3>
+            <p id="authStatus" class="auth-status">Use Google sign-in to unlock the game and track your puzzle attempts.</p>
+          </div>
+          <div class="auth-actions">
+            <button id="googleSignInBtn" class="primary-btn" type="button">Continue with Google</button>
+            <button id="signOutBtn" class="ghost-btn" type="button" hidden>Sign out</button>
+          </div>
+        </section>
+
         <form id="guessForm" class="guess-form" autocomplete="off">
           <label class="input-label" for="guessInput">Enter a 3-digit number</label>
           <input id="guessInput" class="guess-input" type="text" inputmode="numeric" maxlength="3" placeholder="479" />
@@ -96,6 +108,6 @@
     </section>
   </main>
 
-  <script src="./app.js"></script>
+  <script type="module" src="./app.js"></script>
 </body>
 </html>
