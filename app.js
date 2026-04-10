@@ -23,6 +23,10 @@ const dom = {
   guessInput: document.getElementById("guessInput"),
   guessButton: document.getElementById("guessButton"),
   newGameBtn: document.getElementById("newGameBtn"),
+  profileMenuBtn: document.getElementById("profileMenuBtn"),
+  profileAvatar: document.getElementById("profileAvatar"),
+  profileDropdown: document.getElementById("profileDropdown"),
+  profileName: document.getElementById("profileName"),
   signOutBtn: document.getElementById("signOutBtn"),
   statusText: document.getElementById("statusText"),
   historyList: document.getElementById("historyList"),
@@ -42,6 +46,8 @@ function init() {
   dom.newGameBtn.addEventListener("click", resetGame);
   dom.celebrationCloseBtn.addEventListener("click", hideCelebration);
   dom.signOutBtn.addEventListener("click", handleSignOut);
+  dom.profileMenuBtn.addEventListener("click", toggleProfileMenu);
+  document.addEventListener("click", handleOutsideProfileMenuClick);
   onAuthStateChanged(auth, handleAuthStateChange);
   dom.guessInput.disabled = true;
   dom.guessButton.disabled = true;
@@ -214,6 +220,9 @@ async function handleSignOut() {
 
 function handleAuthStateChange(user) {
   if (user) {
+    dom.profileAvatar.src = user.photoURL || "https://www.gstatic.com/images/branding/product/1x/avatar_circle_blue_512dp.png";
+    dom.profileAvatar.alt = `${user.displayName || user.email || "Player"} profile photo`;
+    dom.profileName.textContent = user.displayName || user.email || "Player";
     setGameLocked(false);
     dom.guessInput.focus();
     return;
@@ -237,4 +246,27 @@ function setGameLocked(locked) {
 
 function sanitizeFirebaseMessage(message) {
   return message.replace(/^Firebase:\s*/i, "").trim();
+}
+
+function toggleProfileMenu(event) {
+  event.stopPropagation();
+  const isHidden = dom.profileDropdown.hidden;
+  dom.profileDropdown.hidden = !isHidden;
+  dom.profileMenuBtn.setAttribute("aria-expanded", String(isHidden));
+}
+
+function handleOutsideProfileMenuClick(event) {
+  if (!dom.profileDropdown || dom.profileDropdown.hidden) {
+    return;
+  }
+
+  const target = event.target;
+  if (
+    target instanceof Node &&
+    !dom.profileDropdown.contains(target) &&
+    !dom.profileMenuBtn.contains(target)
+  ) {
+    dom.profileDropdown.hidden = true;
+    dom.profileMenuBtn.setAttribute("aria-expanded", "false");
+  }
 }

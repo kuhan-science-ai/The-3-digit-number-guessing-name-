@@ -65,7 +65,15 @@
           </div>
           <div class="panel-top-actions">
             <span id="attemptCount" class="attempt-badge">0 attempts</span>
-            <button id="signOutBtn" class="ghost-btn" type="button">Sign out</button>
+            <div class="profile-menu">
+              <button id="profileMenuBtn" class="profile-trigger" type="button" aria-label="Open profile menu" aria-expanded="false">
+                <img id="profileAvatar" class="profile-avatar" alt="Signed in player profile" />
+              </button>
+              <div id="profileDropdown" class="profile-dropdown" hidden>
+                <p id="profileName" class="profile-name">Player</p>
+                <button id="signOutBtn" class="ghost-btn profile-signout" type="button">Sign out</button>
+              </div>
+            </div>
           </div>
         </div>
 
