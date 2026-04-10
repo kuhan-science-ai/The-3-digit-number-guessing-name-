@@ -1,0 +1,13 @@
+{
+  "name": "number-guessing-game",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Three-digit number guessing game with word-based hints.",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

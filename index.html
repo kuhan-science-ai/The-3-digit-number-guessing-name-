@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Number Guessing Game</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="page-shell">
+    <section class="game-layout">
+      <aside class="story-panel">
+        <p class="kicker">Logic Puzzle</p>
+        <h1>Crack the hidden 3-digit code.</h1>
+        <p class="lead">
+          Every guess gives you a written clue. Use the clues, compare the positions, and narrow down the secret number step by step.
+        </p>
+
+        <div class="code-strip" aria-hidden="true">
+          <span>?</span>
+          <span>?</span>
+          <span>?</span>
+        </div>
+
+        <section class="example-card">
+          <p class="mini-label">Example clue</p>
+          <p class="example-line"><strong>Secret:</strong> 479</p>
+          <p class="example-line"><strong>Guess:</strong> 498</p>
+          <p class="example-hint">
+            One digit is correct and one digit is correct but in the wrong place.
+          </p>
+        </section>
+      </aside>
+
+      <section class="play-panel">
+        <div class="panel-top">
+          <div>
+            <p class="mini-label">Play area</p>
+            <h2>Make your guess</h2>
+          </div>
+          <span id="attemptCount" class="attempt-badge">0 attempts</span>
+        </div>
+
+        <form id="guessForm" class="guess-form" autocomplete="off">
+          <label class="input-label" for="guessInput">Enter a 3-digit number</label>
+          <input id="guessInput" class="guess-input" type="text" inputmode="numeric" maxlength="3" placeholder="479" />
+          <div class="button-row">
+            <button id="guessButton" class="primary-btn" type="submit">Submit Guess</button>
+            <button id="newGameBtn" class="ghost-btn" type="button">New Secret Number</button>
+          </div>
+        </form>
+
+        <section class="status-panel">
+          <p class="mini-label">Live clue</p>
+          <p id="statusText" class="status-copy">A new secret number is ready. Enter your first guess.</p>
+        </section>
+
+        <section class="history-panel">
+          <div class="history-top">
+            <div>
+              <p class="mini-label">Your trail</p>
+              <h3>Guess history</h3>
+            </div>
+          </div>
+
+          <div id="historyList" class="history-list">
+            <p class="empty-state">Your hints will appear here after each guess.</p>
+          </div>
+        </section>
+      </section>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
