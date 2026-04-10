@@ -11,6 +11,14 @@ const port = Number(process.env.PORT || 3000);
 app.use(express.static(__dirname));
 
 app.get("/", (_req, res) => {
+  res.sendFile(path.join(__dirname, "signin.html"));
+});
+
+app.get("/signin", (_req, res) => {
+  res.sendFile(path.join(__dirname, "signin.html"));
+});
+
+app.get("/game", (_req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 

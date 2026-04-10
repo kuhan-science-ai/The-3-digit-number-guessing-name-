@@ -1,9 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
 import {
   getAuth,
-  GoogleAuthProvider,
   onAuthStateChanged,
-  signInWithPopup,
   signOut,
 } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
 
@@ -19,16 +17,12 @@ const firebaseConfig = {
 
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
-const googleProvider = new GoogleAuthProvider();
 
 const dom = {
   guessForm: document.getElementById("guessForm"),
   guessInput: document.getElementById("guessInput"),
   guessButton: document.getElementById("guessButton"),
   newGameBtn: document.getElementById("newGameBtn"),
-  authTitle: document.getElementById("authTitle"),
-  authStatus: document.getElementById("authStatus"),
-  googleSignInBtn: document.getElementById("googleSignInBtn"),
   signOutBtn: document.getElementById("signOutBtn"),
   statusText: document.getElementById("statusText"),
   historyList: document.getElementById("historyList"),
@@ -40,7 +34,6 @@ const dom = {
 
 let secretNumber = generateSecretNumber();
 let attempts = 0;
-let currentUser = null;
 
 init();
 
@@ -48,10 +41,11 @@ function init() {
   dom.guessForm.addEventListener("submit", handleGuessSubmit);
   dom.newGameBtn.addEventListener("click", resetGame);
   dom.celebrationCloseBtn.addEventListener("click", hideCelebration);
-  dom.googleSignInBtn.addEventListener("click", handleGoogleSignIn);
   dom.signOutBtn.addEventListener("click", handleSignOut);
   onAuthStateChanged(auth, handleAuthStateChange);
-  setGameLocked(true);
+  dom.guessInput.disabled = true;
+  dom.guessButton.disabled = true;
+  dom.newGameBtn.disabled = true;
 }
 
 function handleGuessSubmit(event) {
@@ -208,43 +202,24 @@ function hideCelebration() {
   dom.winCelebration.hidden = true;
 }
 
-async function handleGoogleSignIn() {
-  try {
-    dom.authStatus.textContent = "Opening Google sign-in...";
-    await signInWithPopup(auth, googleProvider);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Google sign-in failed.";
-    dom.authStatus.textContent = sanitizeFirebaseMessage(message);
-  }
-}
-
 async function handleSignOut() {
   try {
     await signOut(auth);
+    window.location.replace("/signin");
   } catch (error) {
     const message = error instanceof Error ? error.message : "Sign-out failed.";
-    dom.authStatus.textContent = sanitizeFirebaseMessage(message);
+    setStatus(sanitizeFirebaseMessage(message), "status-hint");
   }
 }
 
 function handleAuthStateChange(user) {
-  currentUser = user;
   if (user) {
-    const displayName = user.displayName || user.email || "Player";
-    dom.authTitle.textContent = `Welcome, ${displayName}`;
-    dom.authStatus.textContent = "You are signed in. The puzzle board is unlocked.";
-    dom.googleSignInBtn.hidden = true;
-    dom.signOutBtn.hidden = false;
     setGameLocked(false);
     dom.guessInput.focus();
     return;
   }
 
-  dom.authTitle.textContent = "Sign in to play";
-  dom.authStatus.textContent = "Use Google sign-in to unlock the game and track your puzzle attempts.";
-  dom.googleSignInBtn.hidden = false;
-  dom.signOutBtn.hidden = true;
-  setGameLocked(true);
+  window.location.replace("/signin");
 }
 
 function setGameLocked(locked) {
