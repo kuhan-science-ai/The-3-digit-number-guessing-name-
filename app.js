@@ -29,6 +29,7 @@ const dom = {
   profileDropdown: document.getElementById("profileDropdown"),
   profileName: document.getElementById("profileName"),
   signOutBtn: document.getElementById("signOutBtn"),
+  emojiReaction: document.getElementById("emojiReaction"),
   statusText: document.getElementById("statusText"),
   digitTracker: document.getElementById("digitTracker"),
   digitChips: [...document.querySelectorAll(".digit-chip")],
@@ -82,6 +83,7 @@ function saveGameState() {
     attempts,
     crossedDigits,
     history,
+    emojiReaction: dom.emojiReaction.textContent,
     statusText: dom.statusText.textContent,
     statusClass: dom.statusText.className || "status-hint",
     isSolved: dom.guessInput.disabled && dom.guessButton.disabled && attempts > 0,
@@ -137,6 +139,51 @@ function renderDigitTracker() {
   });
 }
 
+function scoreGuess(secret, guess) {
+  let correctPlace = 0;
+  let wrongPlace = 0;
+
+  for (let index = 0; index < guess.length; index += 1) {
+    const digit = guess[index];
+    if (digit === secret[index]) {
+      correctPlace += 1;
+    } else if (secret.includes(digit)) {
+      wrongPlace += 1;
+    }
+  }
+
+  return { correctPlace, wrongPlace };
+}
+
+function getEmojiReaction(correctPlace, wrongPlace, isWin) {
+  if (isWin) {
+    return "👑 Perfect hit";
+  }
+  if (correctPlace === 2) {
+    return "🔥 Super strong guess";
+  }
+  if (correctPlace === 1 && wrongPlace >= 1) {
+    return "🚀 Very promising";
+  }
+  if (wrongPlace >= 2) {
+    return "🧠 Great clue";
+  }
+  if (correctPlace === 1) {
+    return "💎 Nice placement";
+  }
+  if (wrongPlace === 1) {
+    return "✨ Good direction";
+  }
+  return "🌌 Still searching";
+}
+
+function setEmojiReaction(text) {
+  dom.emojiReaction.textContent = text;
+  dom.emojiReaction.classList.remove("pulse");
+  void dom.emojiReaction.offsetWidth;
+  dom.emojiReaction.classList.add("pulse");
+}
+
 function clearDigitTracker() {
   crossedDigits = [];
   renderDigitTracker();
@@ -164,6 +211,7 @@ function restoreGameState() {
   updateAttemptCount();
   renderHistory(Array.isArray(saved.history) ? saved.history : []);
   renderDigitTracker();
+  setEmojiReaction(saved.emojiReaction || "🎯 Steady start");
   setStatus(saved.statusText || "Continue guessing the current secret number.", saved.statusClass || "status-hint");
   hideCelebration();
 
@@ -218,11 +266,13 @@ function handleGuessSubmit(event) {
   attempts += 1;
   updateAttemptCount();
 
+  const score = scoreGuess(secretNumber, guess);
   const hint = buildHint(secretNumber, guess);
   appendHistoryItem(guess, hint);
   saveGameState();
 
   if (guess === secretNumber) {
+    setEmojiReaction(getEmojiReaction(score.correctPlace, score.wrongPlace, true));
     setStatus(`🎉 You guessed it. The secret number was ${secretNumber}.`, "status-win");
     showCelebration(secretNumber, attempts);
     dom.guessInput.value = "";
@@ -232,6 +282,7 @@ function handleGuessSubmit(event) {
     return;
   }
 
+  setEmojiReaction(getEmojiReaction(score.correctPlace, score.wrongPlace, false));
   setStatus(hint, "status-hint");
   dom.guessInput.value = "";
   saveGameState();
@@ -364,6 +415,7 @@ function resetGame() {
   dom.historyList.innerHTML = '<p class="empty-state">Your hints will appear here after each guess.</p>';
   updateAttemptCount();
   renderDigitTracker();
+  setEmojiReaction("🎯 Steady start");
   setStatus("✨ A new secret number is ready. Enter your first guess.", "status-hint");
   saveGameState();
   if (!dom.guessInput.disabled) {
@@ -509,6 +561,7 @@ function setGameLocked(locked) {
     dom.guessNotes.value = "";
     crossedDigits = [];
     renderDigitTracker();
+    setEmojiReaction("🎯 Steady start");
     setStatus("🔐 Sign in with Google to start playing.", "status-hint");
   } else {
     if (!restoreGameState()) {

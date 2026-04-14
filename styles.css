@@ -441,6 +441,24 @@ h3 {
   font-size: 1rem;
 }
 
+.emoji-reaction {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.emoji-reaction.pulse {
+  animation: reactionPulse 0.45s ease;
+}
+
 .tracker-panel {
   padding: 14px;
 }
@@ -636,6 +654,17 @@ h3 {
   100% {
     transform: translateY(220px) rotate(280deg) scale(1.06);
     opacity: 0;
+  }
+}
+
+@keyframes reactionPulse {
+  0% {
+    transform: scale(0.96);
+    opacity: 0.72;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
   }
 }
 
