@@ -310,30 +310,6 @@ h1 {
   font-weight: 600;
 }
 
-.signal-card {
-  margin-top: 28px;
-  padding: 18px 20px;
-  background: rgba(255, 255, 255, 0.45);
-  border: 1px solid rgba(49, 87, 76, 0.08);
-  border-radius: 24px;
-}
-
-.signal-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-top: 14px;
-}
-
-.signal-grid span {
-  aspect-ratio: 1 / 1;
-  border-radius: 18px;
-  background:
-    radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.78), transparent 28%),
-    linear-gradient(135deg, rgba(216, 167, 74, 0.22), rgba(49, 87, 76, 0.18));
-  border: 1px solid rgba(49, 87, 76, 0.08);
-}
-
 .panel-top,
 .history-top {
   display: flex;
