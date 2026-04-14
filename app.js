@@ -89,7 +89,7 @@ function handleGuessSubmit(event) {
 }
 
 function handleGuessInput() {
-  const digitsOnly = dom.guessInput.value.replace(/\D/g, "");
+  const digitsOnly = dom.guessInput.value.replace(/[^1-9]/g, "");
   const uniqueDigits = uniqueDigitString(digitsOnly);
 
   if (dom.guessInput.value !== uniqueDigits) {
@@ -130,7 +130,7 @@ function handleGuessKeyDown(event) {
     dom.guessInput.value.slice(selectionEnd),
   ].join("");
 
-  const nextDigits = nextValue.replace(/\D/g, "");
+  const nextDigits = nextValue.replace(/[^1-9]/g, "");
   if (nextDigits.length > 3 || new Set(nextDigits).size !== nextDigits.length) {
     event.preventDefault();
     setStatus("Only 3 different digits from 1 to 9 can be typed.", "status-hint");
