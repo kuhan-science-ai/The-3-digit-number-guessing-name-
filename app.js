@@ -43,6 +43,8 @@ init();
 
 function init() {
   dom.guessForm.addEventListener("submit", handleGuessSubmit);
+  dom.guessInput.addEventListener("keydown", handleGuessKeyDown);
+  dom.guessInput.addEventListener("paste", handleGuessPaste);
   dom.guessInput.addEventListener("beforeinput", handleGuessBeforeInput);
   dom.guessInput.addEventListener("input", handleGuessInput);
   dom.newGameBtn.addEventListener("click", resetGame);
@@ -88,20 +90,69 @@ function handleGuessSubmit(event) {
 
 function handleGuessInput() {
   const digitsOnly = dom.guessInput.value.replace(/\D/g, "");
-  let uniqueDigits = "";
-
-  for (const digit of digitsOnly) {
-    if (!uniqueDigits.includes(digit)) {
-      uniqueDigits += digit;
-    }
-    if (uniqueDigits.length === 3) {
-      break;
-    }
-  }
+  const uniqueDigits = uniqueDigitString(digitsOnly);
 
   if (dom.guessInput.value !== uniqueDigits) {
     dom.guessInput.value = uniqueDigits;
     setStatus("Repeated digits are not allowed. Use 3 different digits.", "status-hint");
+  }
+}
+
+function handleGuessKeyDown(event) {
+  const allowedControlKeys = new Set([
+    "Backspace",
+    "Delete",
+    "ArrowLeft",
+    "ArrowRight",
+    "ArrowUp",
+    "ArrowDown",
+    "Tab",
+    "Enter",
+    "Home",
+    "End",
+  ]);
+
+  if (event.ctrlKey || event.metaKey || event.altKey || allowedControlKeys.has(event.key)) {
+    return;
+  }
+
+  if (!/^\d$/.test(event.key)) {
+    event.preventDefault();
+    setStatus("Only digits are allowed in the guess box.", "status-hint");
+    return;
+  }
+
+  const selectionStart = dom.guessInput.selectionStart ?? dom.guessInput.value.length;
+  const selectionEnd = dom.guessInput.selectionEnd ?? dom.guessInput.value.length;
+  const nextValue = [
+    dom.guessInput.value.slice(0, selectionStart),
+    event.key,
+    dom.guessInput.value.slice(selectionEnd),
+  ].join("");
+
+  const nextDigits = nextValue.replace(/\D/g, "");
+  if (nextDigits.length > 3 || new Set(nextDigits).size !== nextDigits.length) {
+    event.preventDefault();
+    setStatus("Only 3 different digits can be typed.", "status-hint");
+  }
+}
+
+function handleGuessPaste(event) {
+  event.preventDefault();
+  const pasted = event.clipboardData?.getData("text") ?? "";
+  const selectionStart = dom.guessInput.selectionStart ?? dom.guessInput.value.length;
+  const selectionEnd = dom.guessInput.selectionEnd ?? dom.guessInput.value.length;
+  const merged = [
+    dom.guessInput.value.slice(0, selectionStart),
+    pasted,
+    dom.guessInput.value.slice(selectionEnd),
+  ].join("");
+
+  const sanitized = uniqueDigitString(merged);
+  dom.guessInput.value = sanitized;
+
+  if (sanitized !== merged) {
+    setStatus("Pasted guesses also need 3 different digits.", "status-hint");
   }
 }
 
@@ -132,6 +183,19 @@ function handleGuessBeforeInput(event) {
       setStatus("Only 3 different digits can be typed.", "status-hint");
     }
   }
+}
+
+function uniqueDigitString(value) {
+  let output = "";
+  for (const digit of value.replace(/\D/g, "")) {
+    if (!output.includes(digit)) {
+      output += digit;
+    }
+    if (output.length === 3) {
+      break;
+    }
+  }
+  return output;
 }
 
 function resetGame() {
