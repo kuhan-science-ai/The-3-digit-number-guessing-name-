@@ -30,13 +30,10 @@ const dom = {
   profileName: document.getElementById("profileName"),
   signOutBtn: document.getElementById("signOutBtn"),
   statusText: document.getElementById("statusText"),
-  guessPreview: document.getElementById("guessPreview"),
-  previewSlots: [...document.querySelectorAll(".preview-slot")],
   digitTracker: document.getElementById("digitTracker"),
   digitChips: [...document.querySelectorAll(".digit-chip")],
   clearTrackerBtn: document.getElementById("clearTrackerBtn"),
   guessNotes: document.getElementById("guessNotes"),
-  notesState: document.getElementById("notesState"),
   historyList: document.getElementById("historyList"),
   attemptCount: document.getElementById("attemptCount"),
   winCelebration: document.getElementById("winCelebration"),
@@ -95,10 +92,6 @@ function saveGameState() {
   localStorage.setItem(getStorageKey(), JSON.stringify(payload));
 }
 
-function setNotesState(text) {
-  dom.notesState.textContent = text;
-}
-
 function loadGameState() {
   try {
     const raw = localStorage.getItem(getStorageKey());
@@ -132,15 +125,6 @@ function renderHistory(history) {
 
     item.append(heading, body);
     dom.historyList.append(item);
-  });
-}
-
-function renderGuessPreview() {
-  const letters = dom.guessInput.value.padEnd(3, "_").slice(0, 3).split("");
-  dom.previewSlots.forEach((slot, index) => {
-    const value = letters[index];
-    slot.textContent = value;
-    slot.classList.toggle("filled", value !== "_");
   });
 }
 
@@ -180,7 +164,6 @@ function restoreGameState() {
   updateAttemptCount();
   renderHistory(Array.isArray(saved.history) ? saved.history : []);
   renderDigitTracker();
-  renderGuessPreview();
   setStatus(saved.statusText || "Continue guessing the current secret number.", saved.statusClass || "status-hint");
   hideCelebration();
 
@@ -189,8 +172,6 @@ function restoreGameState() {
   dom.guessButton.disabled = solved;
   dom.guessInput.value = solved ? "" : (saved.currentInput || "");
   dom.guessNotes.value = saved.notes || "";
-  setNotesState(dom.guessNotes.value.trim() ? "Notes saved" : "Notes ready");
-  renderGuessPreview();
 
   if (!solved) {
     dom.guessInput.focus();
@@ -221,7 +202,6 @@ function handleDigitTrackerClick(event) {
 }
 
 function handleNotesInput() {
-  setNotesState(dom.guessNotes.value.trim() ? "Notes saved" : "Notes ready");
   saveGameState();
 }
 
@@ -241,7 +221,6 @@ function handleGuessSubmit(event) {
   const hint = buildHint(secretNumber, guess);
   appendHistoryItem(guess, hint);
   saveGameState();
-  renderGuessPreview();
 
   if (guess === secretNumber) {
     setStatus(`You guessed it. The secret number was ${secretNumber}.`, "status-win");
@@ -256,7 +235,6 @@ function handleGuessSubmit(event) {
   setStatus(hint, "status-hint");
   dom.guessInput.value = "";
   saveGameState();
-  renderGuessPreview();
   dom.guessInput.focus();
 }
 
@@ -269,7 +247,6 @@ function handleGuessInput() {
     setStatus("Use 3 different digits from 1 to 9. Zero and repeated digits are not allowed.", "status-hint");
   }
 
-  renderGuessPreview();
   saveGameState();
 }
 
@@ -330,7 +307,6 @@ function handleGuessPaste(event) {
     setStatus("Pasted guesses also need 3 different digits from 1 to 9.", "status-hint");
   }
 
-  renderGuessPreview();
   saveGameState();
 }
 
@@ -388,8 +364,6 @@ function resetGame() {
   dom.historyList.innerHTML = '<p class="empty-state">Your hints will appear here after each guess.</p>';
   updateAttemptCount();
   renderDigitTracker();
-  renderGuessPreview();
-  setNotesState("Notes ready");
   setStatus("A new secret number is ready. Enter your first guess.", "status-hint");
   saveGameState();
   if (!dom.guessInput.disabled) {
@@ -535,8 +509,6 @@ function setGameLocked(locked) {
     dom.guessNotes.value = "";
     crossedDigits = [];
     renderDigitTracker();
-    renderGuessPreview();
-    setNotesState("Notes ready");
     setStatus("Sign in with Google to start playing.", "status-hint");
   } else {
     if (!restoreGameState()) {
