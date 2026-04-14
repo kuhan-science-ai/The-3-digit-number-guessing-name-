@@ -63,7 +63,7 @@ function handleGuessSubmit(event) {
 
   const guess = dom.guessInput.value.trim();
   if (!isValidGuess(guess)) {
-    setStatus("Enter exactly 3 different digits, like 479. Repeated digits are not allowed.", "status-hint");
+    setStatus("Enter exactly 3 different digits from 1 to 9, like 479. Zero and repeated digits are not allowed.", "status-hint");
     dom.guessInput.focus();
     return;
   }
@@ -94,7 +94,7 @@ function handleGuessInput() {
 
   if (dom.guessInput.value !== uniqueDigits) {
     dom.guessInput.value = uniqueDigits;
-    setStatus("Repeated digits are not allowed. Use 3 different digits.", "status-hint");
+    setStatus("Use 3 different digits from 1 to 9. Zero and repeated digits are not allowed.", "status-hint");
   }
 }
 
@@ -116,9 +116,9 @@ function handleGuessKeyDown(event) {
     return;
   }
 
-  if (!/^\d$/.test(event.key)) {
+  if (!/^[1-9]$/.test(event.key)) {
     event.preventDefault();
-    setStatus("Only digits are allowed in the guess box.", "status-hint");
+    setStatus("Only digits from 1 to 9 are allowed in the guess box.", "status-hint");
     return;
   }
 
@@ -133,7 +133,7 @@ function handleGuessKeyDown(event) {
   const nextDigits = nextValue.replace(/\D/g, "");
   if (nextDigits.length > 3 || new Set(nextDigits).size !== nextDigits.length) {
     event.preventDefault();
-    setStatus("Only 3 different digits can be typed.", "status-hint");
+    setStatus("Only 3 different digits from 1 to 9 can be typed.", "status-hint");
   }
 }
 
@@ -152,7 +152,7 @@ function handleGuessPaste(event) {
   dom.guessInput.value = sanitized;
 
   if (sanitized !== merged) {
-    setStatus("Pasted guesses also need 3 different digits.", "status-hint");
+    setStatus("Pasted guesses also need 3 different digits from 1 to 9.", "status-hint");
   }
 }
 
@@ -174,20 +174,20 @@ function handleGuessBeforeInput(event) {
     dom.guessInput.value.slice(selectionEnd),
   ].join("");
 
-  const digitsOnly = nextValue.replace(/\D/g, "").slice(0, 3);
+  const digitsOnly = nextValue.replace(/[^1-9]/g, "").slice(0, 3);
   const hasRepeat = new Set(digitsOnly).size !== digitsOnly.length;
 
-  if (hasRepeat || /\D/.test(incoming)) {
+  if (hasRepeat || /[^1-9]/.test(incoming)) {
     event.preventDefault();
     if (incoming) {
-      setStatus("Only 3 different digits can be typed.", "status-hint");
+      setStatus("Only 3 different digits from 1 to 9 can be typed.", "status-hint");
     }
   }
 }
 
 function uniqueDigitString(value) {
   let output = "";
-  for (const digit of value.replace(/\D/g, "")) {
+  for (const digit of value.replace(/[^1-9]/g, "")) {
     if (!output.includes(digit)) {
       output += digit;
     }
@@ -216,10 +216,7 @@ function resetGame() {
 function generateSecretNumber() {
   const digits = [];
   while (digits.length < 3) {
-    const digit = String(Math.floor(Math.random() * 10));
-    if (!digits.length && digit === "0") {
-      continue;
-    }
+    const digit = String(Math.floor(Math.random() * 9) + 1);
     if (!digits.includes(digit)) {
       digits.push(digit);
     }
@@ -228,7 +225,7 @@ function generateSecretNumber() {
 }
 
 function isValidGuess(value) {
-  return /^\d{3}$/.test(value) && new Set(value).size === value.length;
+  return /^[1-9]{3}$/.test(value) && new Set(value).size === value.length;
 }
 
 function buildHint(secret, guess) {
