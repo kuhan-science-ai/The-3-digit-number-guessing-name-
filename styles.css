@@ -153,6 +153,8 @@ body::before {
   padding: 42px 38px;
   display: grid;
   gap: 16px;
+  align-content: start;
+  grid-auto-rows: max-content;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.24)),
     linear-gradient(180deg, rgba(49, 87, 76, 0.02), rgba(216, 167, 74, 0.03));
@@ -484,6 +486,13 @@ h1 {
 
 .status-panel {
   margin-top: -2px;
+}
+
+.panel-top,
+.guess-form,
+.status-panel,
+.history-panel {
+  align-self: start;
 }
 
 .status-copy {
