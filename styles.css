@@ -542,9 +542,15 @@ h1 {
     linear-gradient(180deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.54)),
     linear-gradient(135deg, rgba(49, 87, 76, 0.03), rgba(216, 167, 74, 0.04));
   min-height: 0;
+  display: flex;
+  flex-direction: column;
+  max-height: 360px;
+  overflow: hidden;
 }
 
 .history-list {
+  flex: 1;
+  min-height: 0;
   max-height: 320px;
   overflow-y: auto;
   padding-right: 6px;
