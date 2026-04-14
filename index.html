@@ -49,12 +49,6 @@
           <span>Written hints</span>
         </div>
 
-        <div class="code-strip" aria-hidden="true">
-          <span>?</span>
-          <span>?</span>
-          <span>?</span>
-        </div>
-
         <section class="example-card">
           <p class="mini-label">Example clue</p>
           <p class="example-line"><strong>Secret:</strong> 479</p>
@@ -62,6 +56,20 @@
           <p class="example-hint">
             One digit is correct and one digit is correct but in the wrong place.
           </p>
+        </section>
+
+        <section class="notes-panel story-notes-panel">
+          <div class="tracker-top">
+            <div>
+              <p class="mini-label">Player notes</p>
+              <h3>Next guess plan</h3>
+            </div>
+          </div>
+          <textarea
+            id="guessNotes"
+            class="notes-input"
+            placeholder="Write the digits you want to test next and why..."
+          ></textarea>
         </section>
       </aside>
 
@@ -117,20 +125,6 @@
         <section class="status-panel">
           <p class="mini-label">Live clue</p>
           <p id="statusText" class="status-copy">A new secret number is ready. Enter your first guess.</p>
-        </section>
-
-        <section class="notes-panel">
-          <div class="tracker-top">
-            <div>
-              <p class="mini-label">Player notes</p>
-              <h3>Next guess plan</h3>
-            </div>
-          </div>
-          <textarea
-            id="guessNotes"
-            class="notes-input"
-            placeholder="Write the digits you want to test next and why..."
-          ></textarea>
         </section>
 
         <section class="history-panel">
