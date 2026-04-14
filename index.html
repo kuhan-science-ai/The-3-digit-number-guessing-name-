@@ -93,12 +93,33 @@
           </div>
         </div>
 
+        <section class="preview-panel">
+          <div class="preview-top">
+            <div>
+              <p class="mini-label">Live guess</p>
+              <h3>Current attempt</h3>
+            </div>
+            <span id="notesState" class="notes-state">Notes ready</span>
+          </div>
+          <div id="guessPreview" class="guess-preview" aria-label="Current guess preview">
+            <div class="preview-slot">_</div>
+            <div class="preview-slot">_</div>
+            <div class="preview-slot">_</div>
+          </div>
+          <div class="preview-rules">
+            <span>Unique digits only</span>
+            <span>Digits 1 to 9</span>
+            <span>3-digit code</span>
+          </div>
+        </section>
+
         <section class="tracker-panel">
           <div class="tracker-top">
             <div>
               <p class="mini-label">Digit tracker</p>
               <h3>Cross out digits</h3>
             </div>
+            <button id="clearTrackerBtn" class="mini-ghost-btn" type="button">Clear</button>
           </div>
           <div id="digitTracker" class="digit-tracker" aria-label="Digit elimination tracker">
             <button type="button" class="digit-chip" data-digit="1">1</button>
