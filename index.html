@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css?v=20260415-5" />
+  <link rel="stylesheet" href="./styles.css?v=20260415-6" />
 </head>
 <body>
   <div class="ambient ambient-left" aria-hidden="true"></div>
@@ -115,6 +115,7 @@
         </section>
 
         <form id="guessForm" class="guess-form" autocomplete="off">
+          <div id="guessEmojiBurst" class="guess-emoji-burst" aria-hidden="true"></div>
           <label class="input-label" for="guessInput">Enter a 3-digit number from 1 to 9 with no repeated digits</label>
           <input id="guessInput" class="guess-input" type="text" inputmode="numeric" pattern="[1-9]*" maxlength="3" placeholder="479" />
           <div class="button-row">
@@ -145,6 +146,6 @@
     </section>
   </main>
 
-  <script type="module" src="./app.js?v=20260415-5"></script>
+  <script type="module" src="./app.js?v=20260415-6"></script>
 </body>
 </html>

@@ -22,6 +22,7 @@ const STORAGE_KEY = "number-guessing-game-state-v2";
 const dom = {
   guessForm: document.getElementById("guessForm"),
   guessInput: document.getElementById("guessInput"),
+  guessEmojiBurst: document.getElementById("guessEmojiBurst"),
   guessButton: document.getElementById("guessButton"),
   newGameBtn: document.getElementById("newGameBtn"),
   profileMenuBtn: document.getElementById("profileMenuBtn"),
@@ -184,6 +185,19 @@ function setEmojiReaction(text) {
   dom.emojiReaction.classList.add("pulse");
 }
 
+function popGuessEmoji(text) {
+  const emoji = text.split(" ")[0] || "✨";
+  const burst = dom.guessEmojiBurst;
+  if (!burst) {
+    return;
+  }
+
+  burst.textContent = emoji;
+  burst.classList.remove("show");
+  void burst.offsetWidth;
+  burst.classList.add("show");
+}
+
 function clearDigitTracker() {
   crossedDigits = [];
   renderDigitTracker();
@@ -272,7 +286,9 @@ function handleGuessSubmit(event) {
   saveGameState();
 
   if (guess === secretNumber) {
-    setEmojiReaction(getEmojiReaction(score.correctPlace, score.wrongPlace, true));
+    const reaction = getEmojiReaction(score.correctPlace, score.wrongPlace, true);
+    setEmojiReaction(reaction);
+    popGuessEmoji(reaction);
     setStatus(`🎉 You guessed it. The secret number was ${secretNumber}.`, "status-win");
     showCelebration(secretNumber, attempts);
     dom.guessInput.value = "";
@@ -282,7 +298,9 @@ function handleGuessSubmit(event) {
     return;
   }
 
-  setEmojiReaction(getEmojiReaction(score.correctPlace, score.wrongPlace, false));
+  const reaction = getEmojiReaction(score.correctPlace, score.wrongPlace, false);
+  setEmojiReaction(reaction);
+  popGuessEmoji(reaction);
   setStatus(hint, "status-hint");
   dom.guessInput.value = "";
   saveGameState();
