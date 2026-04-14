@@ -541,6 +541,33 @@ h1 {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.54)),
     linear-gradient(135deg, rgba(49, 87, 76, 0.03), rgba(216, 167, 74, 0.04));
+  min-height: 0;
+}
+
+.history-list {
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(49, 87, 76, 0.35) rgba(49, 87, 76, 0.08);
+}
+
+.history-list::-webkit-scrollbar {
+  width: 10px;
+}
+
+.history-list::-webkit-scrollbar-track {
+  background: rgba(49, 87, 76, 0.08);
+  border-radius: 999px;
+}
+
+.history-list::-webkit-scrollbar-thumb {
+  background: rgba(49, 87, 76, 0.35);
+  border-radius: 999px;
+}
+
+.history-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(49, 87, 76, 0.5);
 }
 
 @keyframes confetti-fall {
