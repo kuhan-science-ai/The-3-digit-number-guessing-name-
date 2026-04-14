@@ -17,6 +17,7 @@ const firebaseConfig = {
 
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
+const STORAGE_KEY_PREFIX = "number-guessing-game-state";
 
 const dom = {
   guessForm: document.getElementById("guessForm"),
@@ -38,6 +39,7 @@ const dom = {
 
 let secretNumber = generateSecretNumber();
 let attempts = 0;
+let currentUserId = "guest";
 
 init();
 
@@ -58,6 +60,98 @@ function init() {
   dom.newGameBtn.disabled = true;
 }
 
+function getStorageKey() {
+  return `${STORAGE_KEY_PREFIX}:${currentUserId}`;
+}
+
+function saveGameState() {
+  const history = [...dom.historyList.querySelectorAll(".history-item")].map((item) => ({
+    heading: item.querySelector("h3")?.textContent || "",
+    body: item.querySelector("p")?.textContent || "",
+  }));
+
+  const payload = {
+    secretNumber,
+    attempts,
+    history,
+    statusText: dom.statusText.textContent,
+    statusClass: dom.statusText.className || "status-hint",
+    isSolved: dom.guessInput.disabled && dom.guessButton.disabled && attempts > 0,
+  };
+
+  localStorage.setItem(getStorageKey(), JSON.stringify(payload));
+}
+
+function loadGameState() {
+  try {
+    const raw = localStorage.getItem(getStorageKey());
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function clearGameState() {
+  localStorage.removeItem(getStorageKey());
+}
+
+function renderHistory(history) {
+  dom.historyList.innerHTML = "";
+
+  if (!history.length) {
+    dom.historyList.innerHTML = '<p class="empty-state">Your hints will appear here after each guess.</p>';
+    return;
+  }
+
+  history.forEach((entry) => {
+    const item = document.createElement("article");
+    item.className = "history-item";
+
+    const heading = document.createElement("h3");
+    heading.textContent = entry.heading;
+
+    const body = document.createElement("p");
+    body.textContent = entry.body;
+
+    item.append(heading, body);
+    dom.historyList.append(item);
+  });
+}
+
+function restoreGameState() {
+  const saved = loadGameState();
+  if (!saved) {
+    return false;
+  }
+
+  const validSecret = typeof saved.secretNumber === "string"
+    && /^[1-9]{3}$/.test(saved.secretNumber)
+    && new Set(saved.secretNumber).size === 3;
+
+  if (!validSecret) {
+    clearGameState();
+    return false;
+  }
+
+  secretNumber = saved.secretNumber;
+  attempts = Number(saved.attempts) || 0;
+  updateAttemptCount();
+  renderHistory(Array.isArray(saved.history) ? saved.history : []);
+  setStatus(saved.statusText || "Continue guessing the current secret number.", saved.statusClass || "status-hint");
+  hideCelebration();
+
+  const solved = Boolean(saved.isSolved);
+  dom.guessInput.disabled = solved;
+  dom.guessButton.disabled = solved;
+  dom.guessInput.value = "";
+
+  if (!solved) {
+    dom.guessInput.focus();
+  }
+
+  return true;
+}
+
 function handleGuessSubmit(event) {
   event.preventDefault();
 
@@ -73,6 +167,7 @@ function handleGuessSubmit(event) {
 
   const hint = buildHint(secretNumber, guess);
   appendHistoryItem(guess, hint);
+  saveGameState();
 
   if (guess === secretNumber) {
     setStatus(`You guessed it. The secret number was ${secretNumber}.`, "status-win");
@@ -80,11 +175,13 @@ function handleGuessSubmit(event) {
     dom.guessInput.value = "";
     dom.guessInput.disabled = true;
     dom.guessButton.disabled = true;
+    saveGameState();
     return;
   }
 
   setStatus(hint, "status-hint");
   dom.guessInput.value = "";
+  saveGameState();
   dom.guessInput.focus();
 }
 
@@ -208,6 +305,7 @@ function resetGame() {
   dom.historyList.innerHTML = '<p class="empty-state">Your hints will appear here after each guess.</p>';
   updateAttemptCount();
   setStatus("A new secret number is ready. Enter your first guess.", "status-hint");
+  saveGameState();
   if (!dom.guessInput.disabled) {
     dom.guessInput.focus();
   }
@@ -331,11 +429,11 @@ async function handleSignOut() {
 
 function handleAuthStateChange(user) {
   if (user) {
+    currentUserId = user.uid || user.email || "guest";
     dom.profileAvatar.src = user.photoURL || "https://www.gstatic.com/images/branding/product/1x/avatar_circle_blue_512dp.png";
     dom.profileAvatar.alt = `${user.displayName || user.email || "Player"} profile photo`;
     dom.profileName.textContent = user.displayName || user.email || "Player";
     setGameLocked(false);
-    dom.guessInput.focus();
     return;
   }
 
@@ -351,7 +449,9 @@ function setGameLocked(locked) {
     dom.guessInput.value = "";
     setStatus("Sign in with Google to start playing.", "status-hint");
   } else {
-    resetGame();
+    if (!restoreGameState()) {
+      resetGame();
+    }
   }
 }
 
