@@ -99,6 +99,40 @@
           <p id="statusText" class="status-copy">A new secret number is ready. Enter your first guess.</p>
         </section>
 
+        <section class="tracker-panel">
+          <div class="tracker-top">
+            <div>
+              <p class="mini-label">Digit tracker</p>
+              <h3>Eliminate numbers</h3>
+            </div>
+          </div>
+          <div id="digitTracker" class="digit-tracker" aria-label="Digit elimination tracker">
+            <button type="button" class="digit-chip" data-digit="1">1</button>
+            <button type="button" class="digit-chip" data-digit="2">2</button>
+            <button type="button" class="digit-chip" data-digit="3">3</button>
+            <button type="button" class="digit-chip" data-digit="4">4</button>
+            <button type="button" class="digit-chip" data-digit="5">5</button>
+            <button type="button" class="digit-chip" data-digit="6">6</button>
+            <button type="button" class="digit-chip" data-digit="7">7</button>
+            <button type="button" class="digit-chip" data-digit="8">8</button>
+            <button type="button" class="digit-chip" data-digit="9">9</button>
+          </div>
+        </section>
+
+        <section class="notes-panel">
+          <div class="tracker-top">
+            <div>
+              <p class="mini-label">Player notes</p>
+              <h3>Next guess plan</h3>
+            </div>
+          </div>
+          <textarea
+            id="guessNotes"
+            class="notes-input"
+            placeholder="Write the digits you want to test next and why..."
+          ></textarea>
+        </section>
+
         <section class="history-panel">
           <div class="history-top">
             <div>

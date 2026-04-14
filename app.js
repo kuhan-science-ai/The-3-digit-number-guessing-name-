@@ -30,6 +30,9 @@ const dom = {
   profileName: document.getElementById("profileName"),
   signOutBtn: document.getElementById("signOutBtn"),
   statusText: document.getElementById("statusText"),
+  digitTracker: document.getElementById("digitTracker"),
+  digitChips: [...document.querySelectorAll(".digit-chip")],
+  guessNotes: document.getElementById("guessNotes"),
   historyList: document.getElementById("historyList"),
   attemptCount: document.getElementById("attemptCount"),
   winCelebration: document.getElementById("winCelebration"),
@@ -39,6 +42,7 @@ const dom = {
 
 let secretNumber = generateSecretNumber();
 let attempts = 0;
+let crossedDigits = [];
 init();
 
 function init() {
@@ -47,6 +51,8 @@ function init() {
   dom.guessInput.addEventListener("paste", handleGuessPaste);
   dom.guessInput.addEventListener("beforeinput", handleGuessBeforeInput);
   dom.guessInput.addEventListener("input", handleGuessInput);
+  dom.guessNotes.addEventListener("input", saveGameState);
+  dom.digitTracker.addEventListener("click", handleDigitTrackerClick);
   dom.newGameBtn.addEventListener("click", resetGame);
   dom.celebrationCloseBtn.addEventListener("click", hideCelebration);
   dom.signOutBtn.addEventListener("click", handleSignOut);
@@ -72,11 +78,13 @@ function saveGameState() {
   const payload = {
     secretNumber,
     attempts,
+    crossedDigits,
     history,
     statusText: dom.statusText.textContent,
     statusClass: dom.statusText.className || "status-hint",
     isSolved: dom.guessInput.disabled && dom.guessButton.disabled && attempts > 0,
     currentInput: dom.guessInput.value,
+    notes: dom.guessNotes.value,
   };
 
   localStorage.setItem(getStorageKey(), JSON.stringify(payload));
@@ -118,6 +126,15 @@ function renderHistory(history) {
   });
 }
 
+function renderDigitTracker() {
+  const crossedSet = new Set(crossedDigits);
+  dom.digitChips.forEach((chip) => {
+    const digit = chip.dataset.digit || "";
+    chip.classList.toggle("crossed", crossedSet.has(digit));
+    chip.setAttribute("aria-pressed", String(crossedSet.has(digit)));
+  });
+}
+
 function restoreGameState() {
   const saved = loadGameState();
   if (!saved) {
@@ -135,8 +152,10 @@ function restoreGameState() {
 
   secretNumber = saved.secretNumber;
   attempts = Number(saved.attempts) || 0;
+  crossedDigits = Array.isArray(saved.crossedDigits) ? saved.crossedDigits.filter((digit) => /^[1-9]$/.test(digit)) : [];
   updateAttemptCount();
   renderHistory(Array.isArray(saved.history) ? saved.history : []);
+  renderDigitTracker();
   setStatus(saved.statusText || "Continue guessing the current secret number.", saved.statusClass || "status-hint");
   hideCelebration();
 
@@ -144,12 +163,34 @@ function restoreGameState() {
   dom.guessInput.disabled = solved;
   dom.guessButton.disabled = solved;
   dom.guessInput.value = solved ? "" : (saved.currentInput || "");
+  dom.guessNotes.value = saved.notes || "";
 
   if (!solved) {
     dom.guessInput.focus();
   }
 
   return true;
+}
+
+function handleDigitTrackerClick(event) {
+  const target = event.target;
+  if (!(target instanceof HTMLButtonElement)) {
+    return;
+  }
+
+  const digit = target.dataset.digit;
+  if (!digit) {
+    return;
+  }
+
+  if (crossedDigits.includes(digit)) {
+    crossedDigits = crossedDigits.filter((entry) => entry !== digit);
+  } else {
+    crossedDigits = [...crossedDigits, digit].sort();
+  }
+
+  renderDigitTracker();
+  saveGameState();
 }
 
 function handleGuessSubmit(event) {
@@ -302,12 +343,15 @@ function uniqueDigitString(value) {
 function resetGame() {
   secretNumber = generateSecretNumber();
   attempts = 0;
+  crossedDigits = [];
   hideCelebration();
   dom.guessInput.disabled = false;
   dom.guessButton.disabled = false;
   dom.guessInput.value = "";
+  dom.guessNotes.value = "";
   dom.historyList.innerHTML = '<p class="empty-state">Your hints will appear here after each guess.</p>';
   updateAttemptCount();
+  renderDigitTracker();
   setStatus("A new secret number is ready. Enter your first guess.", "status-hint");
   saveGameState();
   if (!dom.guessInput.disabled) {
@@ -450,6 +494,7 @@ function setGameLocked(locked) {
   if (locked) {
     hideCelebration();
     dom.guessInput.value = "";
+    dom.guessNotes.value = "";
     setStatus("Sign in with Google to start playing.", "status-hint");
   } else {
     if (!restoreGameState()) {

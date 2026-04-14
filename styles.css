@@ -378,6 +378,8 @@ h1 {
 
 .guess-form,
 .status-panel,
+.tracker-panel,
+.notes-panel,
 .history-panel {
   border: 1px solid var(--panel-line);
   background: rgba(255, 255, 255, 0.38);
@@ -456,6 +458,8 @@ h1 {
 }
 
 .status-panel,
+.tracker-panel,
+.notes-panel,
 .history-panel {
   padding: 16px 18px;
 }
@@ -511,6 +515,83 @@ h1 {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.58)),
     linear-gradient(135deg, rgba(216, 167, 74, 0.05), rgba(49, 87, 76, 0.04));
+}
+
+.tracker-panel,
+.notes-panel {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0.58)),
+    linear-gradient(135deg, rgba(49, 87, 76, 0.04), rgba(216, 167, 74, 0.03));
+}
+
+.tracker-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.digit-tracker {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.digit-chip {
+  position: relative;
+  min-height: 56px;
+  border: 1px solid rgba(49, 87, 76, 0.12);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(245, 239, 226, 0.92));
+  color: var(--forest-deep);
+  font-family: "Fraunces", serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.18s ease, background 0.18s ease, opacity 0.18s ease;
+}
+
+.digit-chip:hover {
+  transform: translateY(-1px);
+}
+
+.digit-chip.crossed {
+  color: rgba(31, 42, 46, 0.45);
+  background: linear-gradient(180deg, rgba(226, 220, 208, 0.95), rgba(214, 208, 197, 0.92));
+}
+
+.digit-chip.crossed::after {
+  content: "";
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  top: 50%;
+  height: 3px;
+  border-radius: 999px;
+  background: #c44949;
+  transform: rotate(-12deg);
+  box-shadow: 0 0 0 1px rgba(196, 73, 73, 0.08);
+}
+
+.notes-input {
+  width: 100%;
+  min-height: 120px;
+  margin-top: 12px;
+  padding: 14px 16px;
+  border: 2px solid rgba(49, 87, 76, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 253, 250, 0.92);
+  color: var(--ink);
+  font: inherit;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.notes-input:focus {
+  outline: none;
+  border-color: var(--forest);
+  box-shadow: 0 0 0 4px rgba(49, 87, 76, 0.08);
 }
 
 .history-panel {
