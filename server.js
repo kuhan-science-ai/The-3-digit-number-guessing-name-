@@ -8,6 +8,11 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = Number(process.env.PORT || 3000);
 
+app.use((_req, res, next) => {
+  res.setHeader("Cache-Control", "no-store");
+  next();
+});
+
 app.use(express.static(__dirname));
 
 app.get("/", (_req, res) => {

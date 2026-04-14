@@ -43,6 +43,7 @@ init();
 
 function init() {
   dom.guessForm.addEventListener("submit", handleGuessSubmit);
+  dom.guessInput.addEventListener("input", handleGuessInput);
   dom.newGameBtn.addEventListener("click", resetGame);
   dom.celebrationCloseBtn.addEventListener("click", hideCelebration);
   dom.signOutBtn.addEventListener("click", handleSignOut);
@@ -82,6 +83,25 @@ function handleGuessSubmit(event) {
   setStatus(hint, "status-hint");
   dom.guessInput.value = "";
   dom.guessInput.focus();
+}
+
+function handleGuessInput() {
+  const digitsOnly = dom.guessInput.value.replace(/\D/g, "");
+  let uniqueDigits = "";
+
+  for (const digit of digitsOnly) {
+    if (!uniqueDigits.includes(digit)) {
+      uniqueDigits += digit;
+    }
+    if (uniqueDigits.length === 3) {
+      break;
+    }
+  }
+
+  if (dom.guessInput.value !== uniqueDigits) {
+    dom.guessInput.value = uniqueDigits;
+    setStatus("Repeated digits are not allowed. Use 3 different digits.", "status-hint");
+  }
 }
 
 function resetGame() {
