@@ -59,7 +59,7 @@ function handleGuessSubmit(event) {
 
   const guess = dom.guessInput.value.trim();
   if (!isValidGuess(guess)) {
-    setStatus("Enter exactly 3 digits, like 479.", "status-hint");
+    setStatus("Enter exactly 3 different digits, like 479. Repeated digits are not allowed.", "status-hint");
     dom.guessInput.focus();
     return;
   }
@@ -114,7 +114,7 @@ function generateSecretNumber() {
 }
 
 function isValidGuess(value) {
-  return /^\d{3}$/.test(value);
+  return /^\d{3}$/.test(value) && new Set(value).size === value.length;
 }
 
 function buildHint(secret, guess) {
