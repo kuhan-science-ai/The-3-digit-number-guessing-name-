@@ -10,6 +10,8 @@
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
+  <div class="ambient ambient-left" aria-hidden="true"></div>
+  <div class="ambient ambient-right" aria-hidden="true"></div>
   <div id="winCelebration" class="celebration" hidden>
     <div class="celebration-confetti" aria-hidden="true">
       <span></span>
@@ -41,6 +43,12 @@
           Every guess gives you a written clue. Use the clues, compare the positions, and narrow down the secret number step by step.
         </p>
 
+        <div class="story-badges" aria-label="Game rules">
+          <span>3 unique digits</span>
+          <span>No zero</span>
+          <span>Written hints</span>
+        </div>
+
         <div class="code-strip" aria-hidden="true">
           <span>?</span>
           <span>?</span>
@@ -54,6 +62,21 @@
           <p class="example-hint">
             One digit is correct and one digit is correct but in the wrong place.
           </p>
+        </section>
+
+        <section class="signal-card">
+          <p class="mini-label">Signal board</p>
+          <div class="signal-grid" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
         </section>
       </aside>
 
