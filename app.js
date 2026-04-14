@@ -223,7 +223,7 @@ function handleGuessSubmit(event) {
   saveGameState();
 
   if (guess === secretNumber) {
-    setStatus(`You guessed it. The secret number was ${secretNumber}.`, "status-win");
+    setStatus(`🎉 You guessed it. The secret number was ${secretNumber}.`, "status-win");
     showCelebration(secretNumber, attempts);
     dom.guessInput.value = "";
     dom.guessInput.disabled = true;
@@ -364,7 +364,7 @@ function resetGame() {
   dom.historyList.innerHTML = '<p class="empty-state">Your hints will appear here after each guess.</p>';
   updateAttemptCount();
   renderDigitTracker();
-  setStatus("A new secret number is ready. Enter your first guess.", "status-hint");
+  setStatus("✨ A new secret number is ready. Enter your first guess.", "status-hint");
   saveGameState();
   if (!dom.guessInput.disabled) {
     dom.guessInput.focus();
@@ -509,7 +509,7 @@ function setGameLocked(locked) {
     dom.guessNotes.value = "";
     crossedDigits = [];
     renderDigitTracker();
-    setStatus("Sign in with Google to start playing.", "status-hint");
+    setStatus("🔐 Sign in with Google to start playing.", "status-hint");
   } else {
     if (!restoreGameState()) {
       resetGame();
