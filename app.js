@@ -17,7 +17,7 @@ const firebaseConfig = {
 
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
-const STORAGE_KEY_PREFIX = "number-guessing-game-state";
+const STORAGE_KEY = "number-guessing-game-state-v2";
 
 const dom = {
   guessForm: document.getElementById("guessForm"),
@@ -39,8 +39,6 @@ const dom = {
 
 let secretNumber = generateSecretNumber();
 let attempts = 0;
-let currentUserId = "guest";
-
 init();
 
 function init() {
@@ -54,6 +52,7 @@ function init() {
   dom.signOutBtn.addEventListener("click", handleSignOut);
   dom.profileMenuBtn.addEventListener("click", toggleProfileMenu);
   document.addEventListener("click", handleOutsideProfileMenuClick);
+  window.addEventListener("beforeunload", saveGameState);
   onAuthStateChanged(auth, handleAuthStateChange);
   dom.guessInput.disabled = true;
   dom.guessButton.disabled = true;
@@ -61,7 +60,7 @@ function init() {
 }
 
 function getStorageKey() {
-  return `${STORAGE_KEY_PREFIX}:${currentUserId}`;
+  return STORAGE_KEY;
 }
 
 function saveGameState() {
@@ -77,6 +76,7 @@ function saveGameState() {
     statusText: dom.statusText.textContent,
     statusClass: dom.statusText.className || "status-hint",
     isSolved: dom.guessInput.disabled && dom.guessButton.disabled && attempts > 0,
+    currentInput: dom.guessInput.value,
   };
 
   localStorage.setItem(getStorageKey(), JSON.stringify(payload));
@@ -143,7 +143,7 @@ function restoreGameState() {
   const solved = Boolean(saved.isSolved);
   dom.guessInput.disabled = solved;
   dom.guessButton.disabled = solved;
-  dom.guessInput.value = "";
+  dom.guessInput.value = solved ? "" : (saved.currentInput || "");
 
   if (!solved) {
     dom.guessInput.focus();
@@ -193,6 +193,8 @@ function handleGuessInput() {
     dom.guessInput.value = uniqueDigits;
     setStatus("Use 3 different digits from 1 to 9. Zero and repeated digits are not allowed.", "status-hint");
   }
+
+  saveGameState();
 }
 
 function handleGuessKeyDown(event) {
@@ -251,6 +253,8 @@ function handleGuessPaste(event) {
   if (sanitized !== merged) {
     setStatus("Pasted guesses also need 3 different digits from 1 to 9.", "status-hint");
   }
+
+  saveGameState();
 }
 
 function handleGuessBeforeInput(event) {
@@ -429,7 +433,6 @@ async function handleSignOut() {
 
 function handleAuthStateChange(user) {
   if (user) {
-    currentUserId = user.uid || user.email || "guest";
     dom.profileAvatar.src = user.photoURL || "https://www.gstatic.com/images/branding/product/1x/avatar_circle_blue_512dp.png";
     dom.profileAvatar.alt = `${user.displayName || user.email || "Player"} profile photo`;
     dom.profileName.textContent = user.displayName || user.email || "Player";
