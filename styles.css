@@ -133,6 +133,7 @@ body::before {
   width: min(1080px, 100%);
   display: grid;
   grid-template-columns: 0.95fr 1.05fr;
+  align-items: start;
   background: var(--paper);
   border: 1px solid var(--panel-line);
   box-shadow: var(--shadow);
@@ -151,10 +152,9 @@ body::before {
 
 .play-panel {
   padding: 42px 38px;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 16px;
-  align-content: start;
-  grid-auto-rows: max-content;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.24)),
     linear-gradient(180deg, rgba(49, 87, 76, 0.02), rgba(216, 167, 74, 0.03));
@@ -486,13 +486,6 @@ h1 {
 
 .status-panel {
   margin-top: -2px;
-}
-
-.panel-top,
-.guess-form,
-.status-panel,
-.history-panel {
-  align-self: start;
 }
 
 .status-copy {
