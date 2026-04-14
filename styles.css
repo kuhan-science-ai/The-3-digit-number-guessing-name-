@@ -464,6 +464,10 @@ h1 {
   padding: 16px 18px;
 }
 
+.tracker-panel {
+  padding: 12px 14px;
+}
+
 .status-panel {
   margin: 0;
 }
@@ -533,20 +537,20 @@ h1 {
 
 .digit-tracker {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 12px;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 10px;
 }
 
 .digit-chip {
   position: relative;
-  min-height: 56px;
+  min-height: 42px;
   border: 1px solid rgba(49, 87, 76, 0.12);
-  border-radius: 18px;
+  border-radius: 12px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(245, 239, 226, 0.92));
   color: var(--forest-deep);
   font-family: "Fraunces", serif;
-  font-size: 1.5rem;
+  font-size: 1.05rem;
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.18s ease, background 0.18s ease, opacity 0.18s ease;
@@ -564,10 +568,10 @@ h1 {
 .digit-chip.crossed::after {
   content: "";
   position: absolute;
-  left: 14%;
-  right: 14%;
+  left: 12%;
+  right: 12%;
   top: 50%;
-  height: 3px;
+  height: 2px;
   border-radius: 999px;
   background: #c44949;
   transform: rotate(-12deg);

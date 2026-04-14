@@ -85,25 +85,11 @@
           </div>
         </div>
 
-        <form id="guessForm" class="guess-form" autocomplete="off">
-          <label class="input-label" for="guessInput">Enter a 3-digit number from 1 to 9 with no repeated digits</label>
-          <input id="guessInput" class="guess-input" type="text" inputmode="numeric" pattern="[1-9]*" maxlength="3" placeholder="479" />
-          <div class="button-row">
-            <button id="guessButton" class="primary-btn" type="submit">Submit Guess</button>
-            <button id="newGameBtn" class="ghost-btn" type="button">New Secret Number</button>
-          </div>
-        </form>
-
-        <section class="status-panel">
-          <p class="mini-label">Live clue</p>
-          <p id="statusText" class="status-copy">A new secret number is ready. Enter your first guess.</p>
-        </section>
-
         <section class="tracker-panel">
           <div class="tracker-top">
             <div>
               <p class="mini-label">Digit tracker</p>
-              <h3>Eliminate numbers</h3>
+              <h3>Cross out digits</h3>
             </div>
           </div>
           <div id="digitTracker" class="digit-tracker" aria-label="Digit elimination tracker">
@@ -117,6 +103,20 @@
             <button type="button" class="digit-chip" data-digit="8">8</button>
             <button type="button" class="digit-chip" data-digit="9">9</button>
           </div>
+        </section>
+
+        <form id="guessForm" class="guess-form" autocomplete="off">
+          <label class="input-label" for="guessInput">Enter a 3-digit number from 1 to 9 with no repeated digits</label>
+          <input id="guessInput" class="guess-input" type="text" inputmode="numeric" pattern="[1-9]*" maxlength="3" placeholder="479" />
+          <div class="button-row">
+            <button id="guessButton" class="primary-btn" type="submit">Submit Guess</button>
+            <button id="newGameBtn" class="ghost-btn" type="button">New Secret Number</button>
+          </div>
+        </form>
+
+        <section class="status-panel">
+          <p class="mini-label">Live clue</p>
+          <p id="statusText" class="status-copy">A new secret number is ready. Enter your first guess.</p>
         </section>
 
         <section class="notes-panel">
