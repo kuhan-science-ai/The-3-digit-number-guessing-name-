@@ -18,6 +18,7 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
 const STORAGE_KEY = "number-guessing-game-state-v2";
+const CHALLENGE_PARAM = "challenge";
 
 const dom = {
   guessForm: document.getElementById("guessForm"),
@@ -25,6 +26,9 @@ const dom = {
   guessEmojiBurst: document.getElementById("guessEmojiBurst"),
   guessButton: document.getElementById("guessButton"),
   newGameBtn: document.getElementById("newGameBtn"),
+  challengeFriendBtn: document.getElementById("challengeFriendBtn"),
+  copyChallengeBtn: document.getElementById("copyChallengeBtn"),
+  challengeLink: document.getElementById("challengeLink"),
   profileMenuBtn: document.getElementById("profileMenuBtn"),
   profileAvatar: document.getElementById("profileAvatar"),
   profileDropdown: document.getElementById("profileDropdown"),
@@ -46,6 +50,7 @@ const dom = {
 let secretNumber = generateSecretNumber();
 let attempts = 0;
 let crossedDigits = [];
+let currentChallengeToken = "";
 init();
 
 function init() {
@@ -58,6 +63,8 @@ function init() {
   dom.digitTracker.addEventListener("click", handleDigitTrackerClick);
   dom.clearTrackerBtn.addEventListener("click", clearDigitTracker);
   dom.newGameBtn.addEventListener("click", resetGame);
+  dom.challengeFriendBtn.addEventListener("click", handleCreateChallenge);
+  dom.copyChallengeBtn.addEventListener("click", handleCopyChallengeLink);
   dom.celebrationCloseBtn.addEventListener("click", hideCelebration);
   dom.signOutBtn.addEventListener("click", handleSignOut);
   dom.profileMenuBtn.addEventListener("click", toggleProfileMenu);
@@ -73,6 +80,61 @@ function getStorageKey() {
   return STORAGE_KEY;
 }
 
+function encodeChallengeSecret(secret) {
+  return btoa(secret).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function decodeChallengeSecret(token) {
+  try {
+    const normalized = token.replace(/-/g, "+").replace(/_/g, "/");
+    const padding = "=".repeat((4 - (normalized.length % 4 || 4)) % 4);
+    const secret = atob(normalized + padding);
+    return isValidGuess(secret) ? secret : null;
+  } catch {
+    return null;
+  }
+}
+
+function getChallengeFromUrl() {
+  const url = new URL(window.location.href);
+  const token = url.searchParams.get(CHALLENGE_PARAM);
+  if (!token) {
+    return null;
+  }
+
+  const secret = decodeChallengeSecret(token);
+  if (!secret) {
+    return null;
+  }
+
+  return { secret, token };
+}
+
+function syncChallengeUrl() {
+  const url = new URL(window.location.href);
+  if (currentChallengeToken) {
+    url.searchParams.set(CHALLENGE_PARAM, currentChallengeToken);
+  } else {
+    url.searchParams.delete(CHALLENGE_PARAM);
+  }
+  window.history.replaceState({}, "", url);
+}
+
+function updateChallengeLinkField() {
+  if (!dom.challengeLink) {
+    return;
+  }
+
+  if (!currentChallengeToken) {
+    dom.challengeLink.value = "";
+    return;
+  }
+
+  const url = new URL(window.location.href);
+  url.searchParams.set(CHALLENGE_PARAM, currentChallengeToken);
+  dom.challengeLink.value = url.toString();
+}
+
 function saveGameState() {
   const history = [...dom.historyList.querySelectorAll(".history-item")].map((item) => ({
     heading: item.querySelector("h3")?.textContent || "",
@@ -82,6 +144,7 @@ function saveGameState() {
   const payload = {
     secretNumber,
     attempts,
+    challengeToken: currentChallengeToken,
     crossedDigits,
     history,
     emojiReaction: dom.emojiReaction.textContent,
@@ -204,8 +267,7 @@ function clearDigitTracker() {
   saveGameState();
 }
 
-function restoreGameState() {
-  const saved = loadGameState();
+function restoreGameState(saved = loadGameState()) {
   if (!saved) {
     return false;
   }
@@ -221,6 +283,7 @@ function restoreGameState() {
 
   secretNumber = saved.secretNumber;
   attempts = Number(saved.attempts) || 0;
+  currentChallengeToken = typeof saved.challengeToken === "string" ? saved.challengeToken : "";
   crossedDigits = Array.isArray(saved.crossedDigits) ? saved.crossedDigits.filter((digit) => /^[1-9]$/.test(digit)) : [];
   updateAttemptCount();
   renderHistory(Array.isArray(saved.history) ? saved.history : []);
@@ -240,6 +303,54 @@ function restoreGameState() {
   }
 
   return true;
+}
+
+function initializeFreshRound(statusText) {
+  attempts = 0;
+  crossedDigits = [];
+  hideCelebration();
+  dom.guessInput.disabled = false;
+  dom.guessButton.disabled = false;
+  dom.guessInput.value = "";
+  dom.guessNotes.value = "";
+  dom.historyList.innerHTML = '<p class="empty-state">Your hints will appear here after each guess.</p>';
+  updateAttemptCount();
+  renderDigitTracker();
+  updateChallengeLinkField();
+  setEmojiReaction("ðŸŽ¯ Steady start");
+  setStatus(statusText, "status-hint");
+  saveGameState();
+  dom.guessInput.focus();
+}
+
+function startChallengeRound(secret, token) {
+  secretNumber = secret;
+  currentChallengeToken = token;
+  syncChallengeUrl();
+  initializeFreshRound("ðŸ¤ Friend challenge loaded. Crack the shared secret number.");
+}
+
+function restoreGameFromLocation() {
+  const challenge = getChallengeFromUrl();
+  const saved = loadGameState();
+
+  if (challenge) {
+    if (saved && saved.challengeToken === challenge.token && saved.secretNumber === challenge.secret) {
+      const restored = restoreGameState(saved);
+      updateChallengeLinkField();
+      syncChallengeUrl();
+      return restored;
+    }
+
+    startChallengeRound(challenge.secret, challenge.token);
+    return true;
+  }
+
+  currentChallengeToken = "";
+  syncChallengeUrl();
+  const restored = restoreGameState(saved);
+  updateChallengeLinkField();
+  return restored;
 }
 
 function handleDigitTrackerClick(event) {
@@ -265,6 +376,35 @@ function handleDigitTrackerClick(event) {
 
 function handleNotesInput() {
   saveGameState();
+}
+
+function handleCreateChallenge() {
+  currentChallengeToken = encodeChallengeSecret(secretNumber);
+  syncChallengeUrl();
+  updateChallengeLinkField();
+  setStatus("ðŸ”— Challenge link ready. Share it with a friend to let them solve the same number.", "status-hint");
+  saveGameState();
+}
+
+async function handleCopyChallengeLink() {
+  if (!currentChallengeToken) {
+    handleCreateChallenge();
+  }
+
+  const link = dom.challengeLink.value.trim();
+  if (!link) {
+    setStatus("Create a challenge link first, then copy it.", "status-hint");
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(link);
+    setStatus("âœ¨ Challenge link copied. Send it to your friend.", "status-hint");
+  } catch {
+    dom.challengeLink.focus();
+    dom.challengeLink.select();
+    setStatus("Copy failed automatically, so the challenge link is selected for you.", "status-hint");
+  }
 }
 
 function handleGuessSubmit(event) {
@@ -422,7 +562,10 @@ function uniqueDigitString(value) {
 }
 
 function resetGame() {
+  currentChallengeToken = "";
+  syncChallengeUrl();
   secretNumber = generateSecretNumber();
+  return initializeFreshRound("âœ¨ A new secret number is ready. Enter your first guess.");
   attempts = 0;
   crossedDigits = [];
   hideCelebration();
@@ -578,11 +721,12 @@ function setGameLocked(locked) {
     dom.guessInput.value = "";
     dom.guessNotes.value = "";
     crossedDigits = [];
+    currentChallengeToken = "";
     renderDigitTracker();
     setEmojiReaction("🎯 Steady start");
     setStatus("🔐 Sign in with Google to start playing.", "status-hint");
   } else {
-    if (!restoreGameState()) {
+    if (!restoreGameFromLocation()) {
       resetGame();
     }
   }

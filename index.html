@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css?v=20260415-6" />
+  <link rel="stylesheet" href="./styles.css?v=20260415-7" />
 </head>
 <body>
   <div class="ambient ambient-left" aria-hidden="true"></div>
@@ -114,17 +114,32 @@
           </div>
         </section>
 
-        <form id="guessForm" class="guess-form" autocomplete="off">
-          <div id="guessEmojiBurst" class="guess-emoji-burst" aria-hidden="true"></div>
-          <label class="input-label" for="guessInput">Enter a 3-digit number from 1 to 9 with no repeated digits</label>
-          <input id="guessInput" class="guess-input" type="text" inputmode="numeric" pattern="[1-9]*" maxlength="3" placeholder="479" />
-          <div class="button-row">
-            <button id="guessButton" class="primary-btn" type="submit">Submit Guess</button>
-            <button id="newGameBtn" class="ghost-btn" type="button">New Secret Number</button>
-          </div>
-        </form>
+          <form id="guessForm" class="guess-form" autocomplete="off">
+            <div id="guessEmojiBurst" class="guess-emoji-burst" aria-hidden="true"></div>
+            <label class="input-label" for="guessInput">Enter a 3-digit number from 1 to 9 with no repeated digits</label>
+            <input id="guessInput" class="guess-input" type="text" inputmode="numeric" pattern="[1-9]*" maxlength="3" placeholder="479" />
+            <div class="button-row">
+              <button id="guessButton" class="primary-btn" type="submit">Submit Guess</button>
+              <button id="newGameBtn" class="ghost-btn" type="button">New Secret Number</button>
+            </div>
+          </form>
 
-        <section class="status-panel">
+          <section class="challenge-panel">
+            <div class="tracker-top">
+              <div>
+                <p class="mini-label">Challenge mode</p>
+                <h3>Challenge a friend</h3>
+              </div>
+            </div>
+            <p class="challenge-copy">Create a private link for the current secret number and send it to a friend.</p>
+            <div class="challenge-actions">
+              <button id="challengeFriendBtn" class="primary-btn challenge-btn" type="button">Create Challenge Link</button>
+              <button id="copyChallengeBtn" class="ghost-btn challenge-copy-btn" type="button">Copy Link</button>
+            </div>
+            <input id="challengeLink" class="challenge-link" type="text" readonly placeholder="Challenge link will appear here" />
+          </section>
+
+          <section class="status-panel">
               <p class="mini-label">Live clue · 🔍</p>
           <div id="emojiReaction" class="emoji-reaction" aria-live="polite">🎯 Steady start</div>
           <p id="statusText" class="status-copy">A new secret number is ready. Enter your first guess.</p>
@@ -146,6 +161,6 @@
     </section>
   </main>
 
-  <script type="module" src="./app.js?v=20260415-6"></script>
+  <script type="module" src="./app.js?v=20260415-7"></script>
 </body>
 </html>

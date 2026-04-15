@@ -304,6 +304,7 @@ h3 {
 .guess-form,
 .status-panel,
 .tracker-panel,
+.challenge-panel,
 .notes-panel,
 .history-panel,
 .example-card,
@@ -334,6 +335,7 @@ h3 {
 .guess-form,
 .status-panel,
 .tracker-panel,
+.challenge-panel,
 .notes-panel,
 .history-panel {
   padding: 18px;
@@ -461,6 +463,46 @@ h3 {
 
 .tracker-panel {
   padding: 14px;
+}
+
+.challenge-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.challenge-copy {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.challenge-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.challenge-btn,
+.challenge-copy-btn {
+  flex: 1 1 190px;
+}
+
+.challenge-link {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(125, 211, 252, 0.2);
+  background: rgba(8, 14, 30, 0.78);
+  color: var(--text);
+  font: inherit;
+  outline: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.challenge-link::placeholder {
+  color: rgba(218, 227, 255, 0.4);
 }
 
 .digit-tracker {
@@ -726,6 +768,7 @@ h3 {
   }
 
   .button-row,
+  .challenge-actions,
   .panel-top,
   .history-top,
   .preview-top,
