@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   --bg-1: #140f33;
   --bg-2: #1a2658;
   --bg-3: #14414a;
@@ -329,6 +329,10 @@ h3 {
 }
 
 .story-notes-panel {
+  margin-top: 18px;
+}
+
+.story-challenge-panel {
   margin-top: 18px;
 }
 
@@ -792,3 +796,13 @@ h3 {
     width: 100%;
   }
 }
+
+.primary-btn:disabled,
+.ghost-btn:disabled,
+.mini-ghost-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+

@@ -71,6 +71,21 @@
             placeholder="Write the digits you want to test next and why..."
           ></textarea>
         </section>
+
+        <section class="challenge-panel story-challenge-panel">
+          <div class="tracker-top">
+            <div>
+              <p class="mini-label">Challenge mode</p>
+              <h3>Challenge a friend</h3>
+            </div>
+          </div>
+          <p class="challenge-copy">Create a private link for the current secret number and send it to a friend.</p>
+          <div class="challenge-actions">
+            <button id="challengeFriendBtn" class="primary-btn challenge-btn" type="button">Create Challenge Link</button>
+            <button id="copyChallengeBtn" class="ghost-btn challenge-copy-btn" type="button">Copy Link</button>
+          </div>
+          <input id="challengeLink" class="challenge-link" type="text" readonly placeholder="Challenge link will appear here" />
+        </section>
       </aside>
 
       <section class="play-panel">
@@ -123,21 +138,6 @@
               <button id="newGameBtn" class="ghost-btn" type="button">New Secret Number</button>
             </div>
           </form>
-
-          <section class="challenge-panel">
-            <div class="tracker-top">
-              <div>
-                <p class="mini-label">Challenge mode</p>
-                <h3>Challenge a friend</h3>
-              </div>
-            </div>
-            <p class="challenge-copy">Create a private link for the current secret number and send it to a friend.</p>
-            <div class="challenge-actions">
-              <button id="challengeFriendBtn" class="primary-btn challenge-btn" type="button">Create Challenge Link</button>
-              <button id="copyChallengeBtn" class="ghost-btn challenge-copy-btn" type="button">Copy Link</button>
-            </div>
-            <input id="challengeLink" class="challenge-link" type="text" readonly placeholder="Challenge link will appear here" />
-          </section>
 
           <section class="status-panel">
               <p class="mini-label">Live clue · 🔍</p>
