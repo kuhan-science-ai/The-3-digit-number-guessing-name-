@@ -5,17 +5,22 @@ import {
   signOut,
 } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyASRaubwlYzbd5kcgQ-ZYxqD2YHI2-aaZo",
-  authDomain: "the-number-guessing-game-dbdab.firebaseapp.com",
-  projectId: "the-number-guessing-game-dbdab",
-  storageBucket: "the-number-guessing-game-dbdab.firebasestorage.app",
-  messagingSenderId: "44554448991",
-  appId: "1:44554448991:web:d137f2e3c7ce6f56b0abea",
-  measurementId: "G-QJWQYZ7GFE",
-};
+function getFirebaseConfig() {
+  const host = window.location.hostname;
+  const isLocalHost = host === "localhost" || host === "127.0.0.1";
 
-const firebaseApp = initializeApp(firebaseConfig);
+  return {
+    apiKey: "AIzaSyASRaubwlYzbd5kcgQ-ZYxqD2YHI2-aaZo",
+    authDomain: isLocalHost ? "the-number-guessing-game-dbdab.firebaseapp.com" : window.location.host,
+    projectId: "the-number-guessing-game-dbdab",
+    storageBucket: "the-number-guessing-game-dbdab.firebasestorage.app",
+    messagingSenderId: "44554448991",
+    appId: "1:44554448991:web:d137f2e3c7ce6f56b0abea",
+    measurementId: "G-QJWQYZ7GFE",
+  };
+}
+
+const firebaseApp = initializeApp(getFirebaseConfig());
 const auth = getAuth(firebaseApp);
 const GAME_STORAGE_PREFIX = "number-guessing-game-state-v3";
 const PROFILE_STORAGE_PREFIX = "number-guessing-game-profile-v1";
@@ -1094,3 +1099,4 @@ function handleOutsideProfileMenuClick(event) {
     dom.profileMenuBtn.setAttribute("aria-expanded", "false");
   }
 }
+

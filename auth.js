@@ -1,25 +1,33 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
+﻿import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
 import {
   browserLocalPersistence,
   getAuth,
+  getRedirectResult,
   GoogleAuthProvider,
   onAuthStateChanged,
   setPersistence,
   signInWithPopup,
+  signInWithRedirect,
 } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyASRaubwlYzbd5kcgQ-ZYxqD2YHI2-aaZo",
-  authDomain: "the-number-guessing-game-dbdab.firebaseapp.com",
-  projectId: "the-number-guessing-game-dbdab",
-  storageBucket: "the-number-guessing-game-dbdab.firebasestorage.app",
-  messagingSenderId: "44554448991",
-  appId: "1:44554448991:web:d137f2e3c7ce6f56b0abea",
-  measurementId: "G-QJWQYZ7GFE",
-};
+function getFirebaseConfig() {
+  const host = window.location.hostname;
+  const isLocalHost = host === "localhost" || host === "127.0.0.1";
 
-const auth = getAuth(initializeApp(firebaseConfig));
+  return {
+    apiKey: "AIzaSyASRaubwlYzbd5kcgQ-ZYxqD2YHI2-aaZo",
+    authDomain: isLocalHost ? "the-number-guessing-game-dbdab.firebaseapp.com" : window.location.host,
+    projectId: "the-number-guessing-game-dbdab",
+    storageBucket: "the-number-guessing-game-dbdab.firebasestorage.app",
+    messagingSenderId: "44554448991",
+    appId: "1:44554448991:web:d137f2e3c7ce6f56b0abea",
+    measurementId: "G-QJWQYZ7GFE",
+  };
+}
+
+const auth = getAuth(initializeApp(getFirebaseConfig()));
 const provider = new GoogleAuthProvider();
+const REDIRECT_FLAG = "number-guessing-game-mobile-auth-redirect";
 let isSigningIn = false;
 
 const dom = {
@@ -31,6 +39,26 @@ function setAuthStatus(message, pending = false) {
   dom.authStatus.textContent = message;
   dom.googleSignInBtn.disabled = pending;
   dom.googleSignInBtn.textContent = pending ? "Opening Google..." : "Continue with Google";
+}
+
+function isMobileLikeDevice() {
+  const ua = navigator.userAgent || "";
+  const coarsePointer = window.matchMedia?.("(pointer: coarse)")?.matches ?? false;
+  return coarsePointer || /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+}
+
+function shouldUseRedirectFlow() {
+  const host = window.location.hostname;
+  const isLocalHost = host === "localhost" || host === "127.0.0.1";
+  return !isLocalHost && isMobileLikeDevice();
+}
+
+function markRedirectStarted() {
+  sessionStorage.setItem(REDIRECT_FLAG, "1");
+}
+
+function clearRedirectStarted() {
+  sessionStorage.removeItem(REDIRECT_FLAG);
 }
 
 function getFriendlyAuthMessage(error) {
@@ -70,6 +98,26 @@ async function prepareAuth() {
   } catch {
     // Keep going with default persistence if the browser blocks local persistence.
   }
+
+  try {
+    const result = await getRedirectResult(auth);
+    clearRedirectStarted();
+
+    if (result?.user) {
+      setAuthStatus("Signed in. Sending you to the game...", true);
+      window.location.replace("/game");
+      return;
+    }
+  } catch (error) {
+    clearRedirectStarted();
+    setAuthStatus(getFriendlyAuthMessage(error), false);
+    return;
+  }
+
+  if (sessionStorage.getItem(REDIRECT_FLAG) === "1") {
+    clearRedirectStarted();
+    setAuthStatus("Continue with Google to finish the sign-in on this device.", false);
+  }
 }
 
 if (dom.googleSignInBtn) {
@@ -78,6 +126,7 @@ if (dom.googleSignInBtn) {
 
 onAuthStateChanged(auth, (user) => {
   if (user) {
+    clearRedirectStarted();
     setAuthStatus("Signed in. Sending you to the game...", true);
     window.location.replace("/game");
     return;
@@ -90,11 +139,27 @@ onAuthStateChanged(auth, (user) => {
 
 async function handleGoogleSignIn() {
   if (isSigningIn) {
-    setAuthStatus("A Google sign-in popup is already opening. Wait for it to finish.", true);
+    setAuthStatus("A Google sign-in flow is already opening. Wait for it to finish.", true);
     return;
   }
 
   isSigningIn = true;
+
+  if (shouldUseRedirectFlow()) {
+    markRedirectStarted();
+    setAuthStatus("Redirecting to Google sign-in for mobile...", true);
+
+    try {
+      await signInWithRedirect(auth, provider);
+      return;
+    } catch (error) {
+      clearRedirectStarted();
+      setAuthStatus(getFriendlyAuthMessage(error), false);
+      isSigningIn = false;
+      return;
+    }
+  }
+
   setAuthStatus("Opening Google sign-in...", true);
 
   try {
@@ -102,6 +167,23 @@ async function handleGoogleSignIn() {
     setAuthStatus("Signed in. Sending you to the game...", true);
     window.location.replace("/game");
   } catch (error) {
+    const code = typeof error?.code === "string" ? error.code : "";
+
+    if (code === "auth/popup-blocked" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+      markRedirectStarted();
+      setAuthStatus("Popup was blocked. Redirecting to Google sign-in...", true);
+
+      try {
+        await signInWithRedirect(auth, provider);
+        return;
+      } catch (redirectError) {
+        clearRedirectStarted();
+        setAuthStatus(getFriendlyAuthMessage(redirectError), false);
+        isSigningIn = false;
+        return;
+      }
+    }
+
     setAuthStatus(getFriendlyAuthMessage(error), false);
     isSigningIn = false;
   }
