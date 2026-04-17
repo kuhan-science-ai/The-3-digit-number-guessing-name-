@@ -806,3 +806,163 @@ h3 {
   box-shadow: none;
 }
 
+
+.profile-handle {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.profile-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.challenge-identity {
+  display: grid;
+  gap: 12px;
+}
+
+.challenge-user-pill {
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(143, 103, 255, 0.12), rgba(32, 214, 171, 0.06)),
+    rgba(8, 15, 34, 0.56);
+}
+
+.challenge-user-label {
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.challenge-current-name {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.challenge-field,
+.username-field {
+  display: grid;
+  gap: 8px;
+}
+
+.challenge-field span,
+.username-label {
+  font-size: 0.78rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.challenge-name-input,
+.username-input {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02)),
+    rgba(5, 10, 24, 0.76);
+  color: var(--text);
+  font: inherit;
+}
+
+.challenge-name-input::placeholder,
+.username-input::placeholder {
+  color: rgba(218, 227, 255, 0.42);
+}
+
+.challenge-name-input:focus,
+.username-input:focus {
+  outline: none;
+  border-color: rgba(102, 217, 255, 0.45);
+  box-shadow: 0 0 0 4px rgba(102, 217, 255, 0.12);
+}
+
+.challenge-meta {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.username-overlay[hidden] {
+  display: none !important;
+}
+
+.username-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(3, 8, 22, 0.76);
+  backdrop-filter: blur(18px);
+}
+
+.username-card {
+  width: min(520px, 100%);
+  padding: 28px;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02)),
+    var(--panel);
+  box-shadow: 0 28px 65px rgba(0, 0, 0, 0.42);
+}
+
+.username-copy {
+  margin: 12px 0 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.username-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.username-error {
+  min-height: 22px;
+  margin: 0;
+  color: var(--muted);
+}
+
+.username-error.is-error {
+  color: #ff98a4;
+}
+
+.username-submit {
+  width: 100%;
+}
+
+body.modal-open {
+  overflow: hidden;
+}
+
+button:disabled,
+.primary-btn:disabled,
+.ghost-btn:disabled,
+.mini-ghost-btn:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+@media (max-width: 720px) {
+  .username-card {
+    padding: 24px;
+  }
+}

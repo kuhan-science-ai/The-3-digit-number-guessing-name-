@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -7,11 +7,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css?v=20260415-7" />
+  <link rel="stylesheet" href="./styles.css?v=20260417-9" />
 </head>
 <body>
   <div class="ambient ambient-left" aria-hidden="true"></div>
   <div class="ambient ambient-right" aria-hidden="true"></div>
+
   <div id="winCelebration" class="celebration" hidden>
     <div class="celebration-confetti" aria-hidden="true">
       <span></span>
@@ -34,6 +35,25 @@
       <button id="celebrationCloseBtn" class="primary-btn" type="button">Keep Playing</button>
     </div>
   </div>
+
+  <div id="usernameSetup" class="username-overlay" hidden>
+    <section class="username-card" role="dialog" aria-modal="true" aria-labelledby="usernameTitle">
+      <p class="mini-label">Player setup · ✨</p>
+      <h2 id="usernameTitle">Choose your in-game username</h2>
+      <p class="username-copy">
+        This username appears in challenge links so your friends know exactly who they are competing against.
+      </p>
+      <form id="usernameSetupForm" class="username-form" autocomplete="off">
+        <label class="username-field" for="usernameInput">
+          <span class="username-label">Username</span>
+          <input id="usernameInput" class="username-input" type="text" maxlength="18" placeholder="logic_master" />
+        </label>
+        <p id="usernameError" class="username-error">Use 3-18 letters, numbers, or underscores.</p>
+        <button class="primary-btn username-submit" type="submit">Save username</button>
+      </form>
+    </section>
+  </div>
+
   <main class="page-shell">
     <section class="game-layout">
       <aside class="story-panel">
@@ -79,12 +99,40 @@
               <h3>Challenge a friend</h3>
             </div>
           </div>
-          <p class="challenge-copy">Create a private link for the current secret number and send it to a friend.</p>
+          <p class="challenge-copy">
+            Enter your opponent's username, generate one link, and both of you will solve the same hidden number.
+          </p>
+          <div class="challenge-identity">
+            <div class="challenge-user-pill">
+              <p class="challenge-user-label">Your username</p>
+              <p id="challengeCurrentUsername" class="challenge-current-name">Choose username</p>
+            </div>
+            <label class="challenge-field" for="challengeOpponentInput">
+              <span>Opponent username</span>
+              <input
+                id="challengeOpponentInput"
+                class="challenge-name-input"
+                type="text"
+                maxlength="18"
+                autocomplete="off"
+                placeholder="rival_01"
+              />
+            </label>
+          </div>
+          <p id="challengeMeta" class="challenge-meta">
+            Choose your username first, then type an opponent username to create a shared-number duel link.
+          </p>
           <div class="challenge-actions">
-            <button id="challengeFriendBtn" class="primary-btn challenge-btn" type="button">Create Challenge Link</button>
+            <button id="challengeFriendBtn" class="primary-btn challenge-btn" type="button">Create Match Link</button>
             <button id="copyChallengeBtn" class="ghost-btn challenge-copy-btn" type="button">Copy Link</button>
           </div>
-          <input id="challengeLink" class="challenge-link" type="text" readonly placeholder="Challenge link will appear here" />
+          <input
+            id="challengeLink"
+            class="challenge-link"
+            type="text"
+            readonly
+            placeholder="Challenge link with both usernames will appear here"
+          />
         </section>
       </aside>
 
@@ -102,7 +150,11 @@
               </button>
               <div id="profileDropdown" class="profile-dropdown" hidden>
                 <p id="profileName" class="profile-name">Player</p>
-                <button id="signOutBtn" class="ghost-btn profile-signout" type="button">Sign out</button>
+                <p id="profileHandle" class="profile-handle">Signed in with Google</p>
+                <div class="profile-actions">
+                  <button id="editUsernameBtn" class="ghost-btn profile-edit" type="button">Change username</button>
+                  <button id="signOutBtn" class="ghost-btn profile-signout" type="button">Sign out</button>
+                </div>
               </div>
             </div>
           </div>
@@ -129,18 +181,18 @@
           </div>
         </section>
 
-          <form id="guessForm" class="guess-form" autocomplete="off">
-            <div id="guessEmojiBurst" class="guess-emoji-burst" aria-hidden="true"></div>
-            <label class="input-label" for="guessInput">Enter a 3-digit number from 1 to 9 with no repeated digits</label>
-            <input id="guessInput" class="guess-input" type="text" inputmode="numeric" pattern="[1-9]*" maxlength="3" placeholder="479" />
-            <div class="button-row">
-              <button id="guessButton" class="primary-btn" type="submit">Submit Guess</button>
-              <button id="newGameBtn" class="ghost-btn" type="button">New Secret Number</button>
-            </div>
-          </form>
+        <form id="guessForm" class="guess-form" autocomplete="off">
+          <div id="guessEmojiBurst" class="guess-emoji-burst" aria-hidden="true"></div>
+          <label class="input-label" for="guessInput">Enter a 3-digit number from 1 to 9 with no repeated digits</label>
+          <input id="guessInput" class="guess-input" type="text" inputmode="numeric" pattern="[1-9]*" maxlength="3" placeholder="479" />
+          <div class="button-row">
+            <button id="guessButton" class="primary-btn" type="submit">Submit Guess</button>
+            <button id="newGameBtn" class="ghost-btn" type="button">New Secret Number</button>
+          </div>
+        </form>
 
-          <section class="status-panel">
-              <p class="mini-label">Live clue · 🔍</p>
+        <section class="status-panel">
+          <p class="mini-label">Live clue · 🔍</p>
           <div id="emojiReaction" class="emoji-reaction" aria-live="polite">🎯 Steady start</div>
           <p id="statusText" class="status-copy">A new secret number is ready. Enter your first guess.</p>
         </section>
@@ -161,6 +213,6 @@
     </section>
   </main>
 
-  <script type="module" src="./app.js?v=20260415-7"></script>
+  <script type="module" src="./app.js?v=20260417-9"></script>
 </body>
 </html>

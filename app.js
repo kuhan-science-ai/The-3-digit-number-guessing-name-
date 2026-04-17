@@ -1,4 +1,4 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
+﻿import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
 import {
   getAuth,
   onAuthStateChanged,
@@ -17,8 +17,15 @@ const firebaseConfig = {
 
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
-const STORAGE_KEY = "number-guessing-game-state-v2";
+const GAME_STORAGE_PREFIX = "number-guessing-game-state-v3";
+const PROFILE_STORAGE_PREFIX = "number-guessing-game-profile-v1";
 const CHALLENGE_PARAM = "challenge";
+const CHALLENGE_FROM_PARAM = "from";
+const CHALLENGE_TO_PARAM = "to";
+const USERNAME_PATTERN = /^[A-Za-z0-9_]{3,18}$/;
+const DEFAULT_AVATAR = "https://www.gstatic.com/images/branding/product/1x/avatar_circle_blue_512dp.png";
+const DEFAULT_STATUS = "A new secret number is ready. Enter your first guess.";
+const DEFAULT_USERNAME_HELP = "Use 3-18 letters, numbers, or underscores.";
 
 const dom = {
   guessForm: document.getElementById("guessForm"),
@@ -29,10 +36,15 @@ const dom = {
   challengeFriendBtn: document.getElementById("challengeFriendBtn"),
   copyChallengeBtn: document.getElementById("copyChallengeBtn"),
   challengeLink: document.getElementById("challengeLink"),
+  challengeCurrentUsername: document.getElementById("challengeCurrentUsername"),
+  challengeOpponentInput: document.getElementById("challengeOpponentInput"),
+  challengeMeta: document.getElementById("challengeMeta"),
   profileMenuBtn: document.getElementById("profileMenuBtn"),
   profileAvatar: document.getElementById("profileAvatar"),
   profileDropdown: document.getElementById("profileDropdown"),
   profileName: document.getElementById("profileName"),
+  profileHandle: document.getElementById("profileHandle"),
+  editUsernameBtn: document.getElementById("editUsernameBtn"),
   signOutBtn: document.getElementById("signOutBtn"),
   emojiReaction: document.getElementById("emojiReaction"),
   statusText: document.getElementById("statusText"),
@@ -45,12 +57,20 @@ const dom = {
   winCelebration: document.getElementById("winCelebration"),
   celebrationText: document.getElementById("celebrationText"),
   celebrationCloseBtn: document.getElementById("celebrationCloseBtn"),
+  usernameSetup: document.getElementById("usernameSetup"),
+  usernameSetupForm: document.getElementById("usernameSetupForm"),
+  usernameInput: document.getElementById("usernameInput"),
+  usernameError: document.getElementById("usernameError"),
 };
 
+let currentUser = null;
+let currentUsername = "";
 let secretNumber = generateSecretNumber();
 let attempts = 0;
 let crossedDigits = [];
 let currentChallengeToken = "";
+let currentChallengeMeta = createChallengeMeta();
+
 init();
 
 function init() {
@@ -65,21 +85,150 @@ function init() {
   dom.newGameBtn.addEventListener("click", resetGame);
   dom.challengeFriendBtn.addEventListener("click", handleCreateChallenge);
   dom.copyChallengeBtn.addEventListener("click", handleCopyChallengeLink);
+  dom.challengeOpponentInput.addEventListener("input", handleChallengeOpponentInput);
   dom.celebrationCloseBtn.addEventListener("click", hideCelebration);
   dom.signOutBtn.addEventListener("click", handleSignOut);
+  dom.editUsernameBtn.addEventListener("click", handleEditUsername);
   dom.profileMenuBtn.addEventListener("click", toggleProfileMenu);
+  dom.usernameSetupForm.addEventListener("submit", handleUsernameSetupSubmit);
+  dom.usernameInput.addEventListener("input", handleUsernameInput);
   document.addEventListener("click", handleOutsideProfileMenuClick);
   window.addEventListener("beforeunload", saveGameState);
   onAuthStateChanged(auth, handleAuthStateChange);
-  dom.guessInput.disabled = true;
-  dom.guessButton.disabled = true;
-  dom.newGameBtn.disabled = true;
+  updateAttemptCount();
+  renderDigitTracker();
+  setEmojiReaction("🎯 Steady start");
+  setStatus("🔐 Sign in with Google to start playing.", "status-hint");
+  updateProfileUi();
+  updateChallengeUi();
+  setGameLocked(true);
 }
 
-function getStorageKey() {
-  return STORAGE_KEY;
+function createChallengeMeta(creatorUsername = "", opponentUsername = "") {
+  return {
+    creatorUsername: sanitizeUsername(creatorUsername),
+    opponentUsername: sanitizeUsername(opponentUsername),
+  };
 }
 
+function sanitizeUsername(value) {
+  return String(value || "").replace(/[^A-Za-z0-9_]/g, "").slice(0, 18);
+}
+
+function isValidUsername(value) {
+  return USERNAME_PATTERN.test(value);
+}
+
+function usernamesMatch(left, right) {
+  const normalizedLeft = sanitizeUsername(left).toLowerCase();
+  const normalizedRight = sanitizeUsername(right).toLowerCase();
+  return Boolean(normalizedLeft) && normalizedLeft === normalizedRight;
+}
+
+function getStorageKey(uid = currentUser?.uid) {
+  return uid ? `${GAME_STORAGE_PREFIX}:${uid}` : "";
+}
+
+function getProfileStorageKey(uid = currentUser?.uid) {
+  return uid ? `${PROFILE_STORAGE_PREFIX}:${uid}` : "";
+}
+
+function loadPlayerProfile() {
+  const key = getProfileStorageKey();
+  if (!key) {
+    return null;
+  }
+
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function savePlayerProfile(profile) {
+  const key = getProfileStorageKey();
+  if (!key) {
+    return;
+  }
+
+  localStorage.setItem(key, JSON.stringify(profile));
+}
+
+function setUsernameMessage(message, isError = false) {
+  dom.usernameError.textContent = message;
+  dom.usernameError.classList.toggle("is-error", isError);
+}
+
+function showUsernameSetup(preset = currentUsername) {
+  dom.usernameSetup.hidden = false;
+  dom.usernameInput.value = preset;
+  setUsernameMessage(DEFAULT_USERNAME_HELP, false);
+  document.body.classList.add("modal-open");
+  requestAnimationFrame(() => {
+    dom.usernameInput.focus();
+    dom.usernameInput.select();
+  });
+}
+
+function hideUsernameSetup() {
+  dom.usernameSetup.hidden = true;
+  document.body.classList.remove("modal-open");
+}
+
+function handleUsernameInput() {
+  const sanitized = sanitizeUsername(dom.usernameInput.value);
+  if (dom.usernameInput.value !== sanitized) {
+    dom.usernameInput.value = sanitized;
+  }
+
+  setUsernameMessage(DEFAULT_USERNAME_HELP, false);
+}
+
+function updateProfileUi() {
+  const fallbackName = currentUser?.displayName || currentUser?.email || "Player";
+  dom.profileAvatar.src = currentUser?.photoURL || DEFAULT_AVATAR;
+  dom.profileAvatar.alt = `${fallbackName} profile photo`;
+  dom.profileName.textContent = currentUsername || fallbackName;
+  dom.profileHandle.textContent = currentUser?.email ? `Google: ${currentUser.email}` : "Signed in with Google";
+  updateChallengeUi();
+}
+
+function getChallengePanelCopy() {
+  if (!currentUsername) {
+    return "Choose your username first, then type an opponent username to create a shared-number duel link.";
+  }
+
+  const opponentDraft = sanitizeUsername(dom.challengeOpponentInput.value);
+  if (currentChallengeToken && currentChallengeMeta.creatorUsername && currentChallengeMeta.opponentUsername) {
+    if (usernamesMatch(currentUsername, currentChallengeMeta.creatorUsername)) {
+      return `Your current duel link is ready for @${currentChallengeMeta.opponentUsername}. Share it so both of you solve the same hidden number.`;
+    }
+
+    if (usernamesMatch(currentUsername, currentChallengeMeta.opponentUsername)) {
+      return `@${currentChallengeMeta.creatorUsername} challenged you to solve the same hidden number. Beat their attempt count.`;
+    }
+
+    return `This shared-number duel pairs @${currentChallengeMeta.creatorUsername} against @${currentChallengeMeta.opponentUsername}.`;
+  }
+
+  if (opponentDraft) {
+    return `Generate one private duel link for @${opponentDraft}. Both players will receive the same hidden number.`;
+  }
+
+  return "Type your friend's username, then generate one private link that locks both players onto the same number.";
+}
+
+function updateChallengeUi() {
+  dom.challengeCurrentUsername.textContent = currentUsername ? `@${currentUsername}` : "Choose username";
+  const canCreateChallenge = Boolean(currentUser && currentUsername);
+  dom.challengeOpponentInput.disabled = !canCreateChallenge;
+  dom.challengeFriendBtn.disabled = !canCreateChallenge;
+  dom.copyChallengeBtn.disabled = !currentChallengeToken;
+  dom.challengeMeta.textContent = getChallengePanelCopy();
+  updateChallengeLinkField();
+}
 function encodeChallengeSecret(secret) {
   return btoa(secret).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
@@ -107,35 +256,75 @@ function getChallengeFromUrl() {
     return null;
   }
 
-  return { secret, token };
+  return {
+    secret,
+    token,
+    meta: createChallengeMeta(
+      url.searchParams.get(CHALLENGE_FROM_PARAM) || "",
+      url.searchParams.get(CHALLENGE_TO_PARAM) || "",
+    ),
+  };
 }
 
 function syncChallengeUrl() {
   const url = new URL(window.location.href);
+
   if (currentChallengeToken) {
     url.searchParams.set(CHALLENGE_PARAM, currentChallengeToken);
+
+    if (currentChallengeMeta.creatorUsername) {
+      url.searchParams.set(CHALLENGE_FROM_PARAM, currentChallengeMeta.creatorUsername);
+    } else {
+      url.searchParams.delete(CHALLENGE_FROM_PARAM);
+    }
+
+    if (currentChallengeMeta.opponentUsername) {
+      url.searchParams.set(CHALLENGE_TO_PARAM, currentChallengeMeta.opponentUsername);
+    } else {
+      url.searchParams.delete(CHALLENGE_TO_PARAM);
+    }
   } else {
     url.searchParams.delete(CHALLENGE_PARAM);
+    url.searchParams.delete(CHALLENGE_FROM_PARAM);
+    url.searchParams.delete(CHALLENGE_TO_PARAM);
   }
+
   window.history.replaceState({}, "", url);
 }
 
-function updateChallengeLinkField() {
-  if (!dom.challengeLink) {
-    return;
-  }
-
+function buildChallengeLinkValue() {
   if (!currentChallengeToken) {
-    dom.challengeLink.value = "";
-    return;
+    return "";
   }
 
   const url = new URL(window.location.href);
   url.searchParams.set(CHALLENGE_PARAM, currentChallengeToken);
-  dom.challengeLink.value = url.toString();
+
+  if (currentChallengeMeta.creatorUsername) {
+    url.searchParams.set(CHALLENGE_FROM_PARAM, currentChallengeMeta.creatorUsername);
+  } else {
+    url.searchParams.delete(CHALLENGE_FROM_PARAM);
+  }
+
+  if (currentChallengeMeta.opponentUsername) {
+    url.searchParams.set(CHALLENGE_TO_PARAM, currentChallengeMeta.opponentUsername);
+  } else {
+    url.searchParams.delete(CHALLENGE_TO_PARAM);
+  }
+
+  return url.toString();
+}
+
+function updateChallengeLinkField() {
+  dom.challengeLink.value = buildChallengeLinkValue();
 }
 
 function saveGameState() {
+  const key = getStorageKey();
+  if (!key) {
+    return;
+  }
+
   const history = [...dom.historyList.querySelectorAll(".history-item")].map((item) => ({
     heading: item.querySelector("h3")?.textContent || "",
     body: item.querySelector("p")?.textContent || "",
@@ -145,6 +334,8 @@ function saveGameState() {
     secretNumber,
     attempts,
     challengeToken: currentChallengeToken,
+    challengeMeta: currentChallengeMeta,
+    challengeOpponentDraft: sanitizeUsername(dom.challengeOpponentInput.value),
     crossedDigits,
     history,
     emojiReaction: dom.emojiReaction.textContent,
@@ -155,12 +346,17 @@ function saveGameState() {
     notes: dom.guessNotes.value,
   };
 
-  localStorage.setItem(getStorageKey(), JSON.stringify(payload));
+  localStorage.setItem(key, JSON.stringify(payload));
 }
 
 function loadGameState() {
+  const key = getStorageKey();
+  if (!key) {
+    return null;
+  }
+
   try {
-    const raw = localStorage.getItem(getStorageKey());
+    const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
@@ -168,7 +364,12 @@ function loadGameState() {
 }
 
 function clearGameState() {
-  localStorage.removeItem(getStorageKey());
+  const key = getStorageKey();
+  if (!key) {
+    return;
+  }
+
+  localStorage.removeItem(key);
 }
 
 function renderHistory(history) {
@@ -250,15 +451,10 @@ function setEmojiReaction(text) {
 
 function popGuessEmoji(text) {
   const emoji = text.split(" ")[0] || "✨";
-  const burst = dom.guessEmojiBurst;
-  if (!burst) {
-    return;
-  }
-
-  burst.textContent = emoji;
-  burst.classList.remove("show");
-  void burst.offsetWidth;
-  burst.classList.add("show");
+  dom.guessEmojiBurst.textContent = emoji;
+  dom.guessEmojiBurst.classList.remove("show");
+  void dom.guessEmojiBurst.offsetWidth;
+  dom.guessEmojiBurst.classList.add("show");
 }
 
 function clearDigitTracker() {
@@ -268,7 +464,7 @@ function clearDigitTracker() {
 }
 
 function restoreGameState(saved = loadGameState()) {
-  if (!saved) {
+  if (!saved || !currentUser) {
     return false;
   }
 
@@ -284,10 +480,21 @@ function restoreGameState(saved = loadGameState()) {
   secretNumber = saved.secretNumber;
   attempts = Number(saved.attempts) || 0;
   currentChallengeToken = typeof saved.challengeToken === "string" ? saved.challengeToken : "";
-  crossedDigits = Array.isArray(saved.crossedDigits) ? saved.crossedDigits.filter((digit) => /^[1-9]$/.test(digit)) : [];
+  currentChallengeMeta = createChallengeMeta(
+    saved.challengeMeta?.creatorUsername,
+    saved.challengeMeta?.opponentUsername,
+  );
+  crossedDigits = Array.isArray(saved.crossedDigits)
+    ? saved.crossedDigits.filter((digit) => /^[1-9]$/.test(digit))
+    : [];
+  dom.challengeOpponentInput.value = sanitizeUsername(
+    saved.challengeOpponentDraft || currentChallengeMeta.opponentUsername,
+  );
   updateAttemptCount();
   renderHistory(Array.isArray(saved.history) ? saved.history : []);
   renderDigitTracker();
+  updateChallengeUi();
+  syncChallengeUrl();
   setEmojiReaction(saved.emojiReaction || "🎯 Steady start");
   setStatus(saved.statusText || "Continue guessing the current secret number.", saved.statusClass || "status-hint");
   hideCelebration();
@@ -304,30 +511,54 @@ function restoreGameState(saved = loadGameState()) {
 
   return true;
 }
-
-function initializeFreshRound(statusText) {
+function initializeFreshRound(statusText = DEFAULT_STATUS) {
   attempts = 0;
   crossedDigits = [];
   hideCelebration();
   dom.guessInput.disabled = false;
   dom.guessButton.disabled = false;
+  dom.newGameBtn.disabled = false;
   dom.guessInput.value = "";
   dom.guessNotes.value = "";
   dom.historyList.innerHTML = '<p class="empty-state">Your hints will appear here after each guess.</p>';
   updateAttemptCount();
   renderDigitTracker();
-  updateChallengeLinkField();
-  setEmojiReaction("ðŸŽ¯ Steady start");
+  updateChallengeUi();
+  syncChallengeUrl();
+  setEmojiReaction("🎯 Steady start");
   setStatus(statusText, "status-hint");
   saveGameState();
   dom.guessInput.focus();
 }
 
-function startChallengeRound(secret, token) {
+function buildChallengeLoadedStatus() {
+  if (currentChallengeMeta.creatorUsername && currentChallengeMeta.opponentUsername) {
+    if (usernamesMatch(currentUsername, currentChallengeMeta.opponentUsername)) {
+      return `🤝 @${currentChallengeMeta.creatorUsername} challenged you. Solve the same number in fewer attempts.`;
+    }
+
+    if (usernamesMatch(currentUsername, currentChallengeMeta.creatorUsername)) {
+      return `🤝 Your duel against @${currentChallengeMeta.opponentUsername} is ready. Share the link and compare attempts.`;
+    }
+
+    return `🤝 Shared duel loaded for @${currentChallengeMeta.creatorUsername} vs @${currentChallengeMeta.opponentUsername}.`;
+  }
+
+  if (currentChallengeMeta.creatorUsername) {
+    return `🤝 @${currentChallengeMeta.creatorUsername} shared a challenge with you.`;
+  }
+
+  return "🤝 Friend challenge loaded. Crack the shared secret number.";
+}
+
+function startChallengeRound(secret, token, meta) {
   secretNumber = secret;
   currentChallengeToken = token;
-  syncChallengeUrl();
-  initializeFreshRound("ðŸ¤ Friend challenge loaded. Crack the shared secret number.");
+  currentChallengeMeta = createChallengeMeta(meta.creatorUsername, meta.opponentUsername);
+  if (currentChallengeMeta.opponentUsername) {
+    dom.challengeOpponentInput.value = currentChallengeMeta.opponentUsername;
+  }
+  initializeFreshRound(buildChallengeLoadedStatus());
 }
 
 function restoreGameFromLocation() {
@@ -337,20 +568,33 @@ function restoreGameFromLocation() {
   if (challenge) {
     if (saved && saved.challengeToken === challenge.token && saved.secretNumber === challenge.secret) {
       const restored = restoreGameState(saved);
-      updateChallengeLinkField();
+      currentChallengeMeta = createChallengeMeta(
+        challenge.meta.creatorUsername || currentChallengeMeta.creatorUsername,
+        challenge.meta.opponentUsername || currentChallengeMeta.opponentUsername,
+      );
+      if (currentChallengeMeta.opponentUsername) {
+        dom.challengeOpponentInput.value = currentChallengeMeta.opponentUsername;
+      }
+      updateChallengeUi();
       syncChallengeUrl();
       return restored;
     }
 
-    startChallengeRound(challenge.secret, challenge.token);
+    startChallengeRound(challenge.secret, challenge.token, challenge.meta);
+    return true;
+  }
+
+  const restored = restoreGameState(saved);
+  if (restored) {
+    syncChallengeUrl();
     return true;
   }
 
   currentChallengeToken = "";
+  currentChallengeMeta = createChallengeMeta();
+  updateChallengeUi();
   syncChallengeUrl();
-  const restored = restoreGameState(saved);
-  updateChallengeLinkField();
-  return restored;
+  return false;
 }
 
 function handleDigitTrackerClick(event) {
@@ -378,11 +622,43 @@ function handleNotesInput() {
   saveGameState();
 }
 
+function handleChallengeOpponentInput() {
+  const sanitized = sanitizeUsername(dom.challengeOpponentInput.value);
+  if (dom.challengeOpponentInput.value !== sanitized) {
+    dom.challengeOpponentInput.value = sanitized;
+  }
+
+  updateChallengeUi();
+  saveGameState();
+}
+
 function handleCreateChallenge() {
+  if (!currentUsername) {
+    showUsernameSetup();
+    setStatus("Create your username first so your friend knows who challenged them.", "status-hint");
+    return;
+  }
+
+  const opponentUsername = sanitizeUsername(dom.challengeOpponentInput.value);
+  dom.challengeOpponentInput.value = opponentUsername;
+
+  if (!isValidUsername(opponentUsername)) {
+    setStatus("Enter an opponent username with 3-18 letters, numbers, or underscores.", "status-hint");
+    dom.challengeOpponentInput.focus();
+    return;
+  }
+
+  if (usernamesMatch(currentUsername, opponentUsername)) {
+    setStatus("Choose an opponent username that is different from your own.", "status-hint");
+    dom.challengeOpponentInput.focus();
+    return;
+  }
+
   currentChallengeToken = encodeChallengeSecret(secretNumber);
+  currentChallengeMeta = createChallengeMeta(currentUsername, opponentUsername);
+  updateChallengeUi();
   syncChallengeUrl();
-  updateChallengeLinkField();
-  setStatus("ðŸ”— Challenge link ready. Share it with a friend to let them solve the same number.", "status-hint");
+  setStatus(`Challenge link ready for @${opponentUsername}. Share it so both of you solve the same hidden number.`, "status-hint");
   saveGameState();
 }
 
@@ -399,7 +675,9 @@ async function handleCopyChallengeLink() {
 
   try {
     await navigator.clipboard.writeText(link);
-    setStatus("âœ¨ Challenge link copied. Send it to your friend.", "status-hint");
+    const opponentUsername = currentChallengeMeta.opponentUsername;
+    const detail = opponentUsername ? ` for @${opponentUsername}` : "";
+    setStatus(`✨ Challenge link copied${detail}.`, "status-hint");
   } catch {
     dom.challengeLink.focus();
     dom.challengeLink.select();
@@ -497,7 +775,6 @@ function handleGuessKeyDown(event) {
     setStatus("Only 3 different digits from 1 to 9 can be typed.", "status-hint");
   }
 }
-
 function handleGuessPaste(event) {
   event.preventDefault();
   const pasted = event.clipboardData?.getData("text") ?? "";
@@ -563,25 +840,11 @@ function uniqueDigitString(value) {
 
 function resetGame() {
   currentChallengeToken = "";
+  currentChallengeMeta = createChallengeMeta();
+  updateChallengeUi();
   syncChallengeUrl();
   secretNumber = generateSecretNumber();
-  return initializeFreshRound("âœ¨ A new secret number is ready. Enter your first guess.");
-  attempts = 0;
-  crossedDigits = [];
-  hideCelebration();
-  dom.guessInput.disabled = false;
-  dom.guessButton.disabled = false;
-  dom.guessInput.value = "";
-  dom.guessNotes.value = "";
-  dom.historyList.innerHTML = '<p class="empty-state">Your hints will appear here after each guess.</p>';
-  updateAttemptCount();
-  renderDigitTracker();
-  setEmojiReaction("🎯 Steady start");
-  setStatus("✨ A new secret number is ready. Enter your first guess.", "status-hint");
-  saveGameState();
-  if (!dom.guessInput.disabled) {
-    dom.guessInput.focus();
-  }
+  initializeFreshRound("✨ A new secret number is ready. Enter your first guess.");
 }
 
 function generateSecretNumber() {
@@ -674,20 +937,32 @@ function setStatus(text, className) {
 }
 
 function showCelebration(secret, totalAttempts) {
-  if (!dom.winCelebration || !dom.celebrationText) {
-    return;
-  }
-
   dom.celebrationText.textContent = `The secret number was ${secret}. You solved it in ${totalAttempts} ${totalAttempts === 1 ? "attempt" : "attempts"}.`;
   dom.winCelebration.hidden = false;
 }
 
 function hideCelebration() {
-  if (!dom.winCelebration) {
-    return;
-  }
-
   dom.winCelebration.hidden = true;
+}
+
+function renderLockedShell(message) {
+  attempts = 0;
+  crossedDigits = [];
+  currentChallengeToken = "";
+  currentChallengeMeta = createChallengeMeta();
+  secretNumber = generateSecretNumber();
+  dom.guessInput.value = "";
+  dom.guessNotes.value = "";
+  dom.challengeLink.value = "";
+  dom.challengeOpponentInput.value = "";
+  dom.historyList.innerHTML = '<p class="empty-state">Your hints will appear here after each guess.</p>';
+  hideCelebration();
+  renderDigitTracker();
+  updateAttemptCount();
+  setEmojiReaction("🎯 Steady start");
+  setStatus(message, "status-hint");
+  updateChallengeUi();
+  setGameLocked(true);
 }
 
 async function handleSignOut() {
@@ -700,15 +975,82 @@ async function handleSignOut() {
   }
 }
 
-function handleAuthStateChange(user) {
-  if (user) {
-    dom.profileAvatar.src = user.photoURL || "https://www.gstatic.com/images/branding/product/1x/avatar_circle_blue_512dp.png";
-    dom.profileAvatar.alt = `${user.displayName || user.email || "Player"} profile photo`;
-    dom.profileName.textContent = user.displayName || user.email || "Player";
-    setGameLocked(false);
+function handleEditUsername() {
+  dom.profileDropdown.hidden = true;
+  dom.profileMenuBtn.setAttribute("aria-expanded", "false");
+  showUsernameSetup(currentUsername);
+}
+
+function handleUsernameSetupSubmit(event) {
+  event.preventDefault();
+
+  const nextUsername = sanitizeUsername(dom.usernameInput.value);
+  dom.usernameInput.value = nextUsername;
+
+  if (!isValidUsername(nextUsername)) {
+    setUsernameMessage(DEFAULT_USERNAME_HELP, true);
+    dom.usernameInput.focus();
     return;
   }
 
+  const previousUsername = currentUsername;
+  const wasMissingUsername = !previousUsername;
+
+  currentUsername = nextUsername;
+  savePlayerProfile({ username: currentUsername });
+
+  if (currentChallengeToken && usernamesMatch(currentChallengeMeta.creatorUsername, previousUsername)) {
+    currentChallengeMeta = createChallengeMeta(currentUsername, currentChallengeMeta.opponentUsername);
+  }
+
+  updateProfileUi();
+  hideUsernameSetup();
+  setGameLocked(false);
+
+  if (wasMissingUsername) {
+    if (!restoreGameFromLocation()) {
+      resetGame();
+    }
+
+    if (currentChallengeToken) {
+      setStatus(buildChallengeLoadedStatus(), "status-hint");
+    } else {
+      setStatus(`Welcome @${currentUsername}. Your board is ready.`, "status-hint");
+    }
+
+    return;
+  }
+
+  updateChallengeUi();
+  syncChallengeUrl();
+  saveGameState();
+  setStatus(`Username updated to @${currentUsername}.`, "status-hint");
+}
+
+function handleAuthStateChange(user) {
+  if (user) {
+    currentUser = user;
+    currentUsername = sanitizeUsername(loadPlayerProfile()?.username || "");
+    updateProfileUi();
+
+    if (!currentUsername) {
+      renderLockedShell("Choose a username to unlock your board and create named challenges.");
+      showUsernameSetup();
+      return;
+    }
+
+    hideUsernameSetup();
+    setGameLocked(false);
+    if (!restoreGameFromLocation()) {
+      resetGame();
+    }
+    return;
+  }
+
+  currentUser = null;
+  currentUsername = "";
+  updateProfileUi();
+  hideUsernameSetup();
   window.location.replace("/signin");
 }
 
@@ -716,19 +1058,13 @@ function setGameLocked(locked) {
   dom.guessInput.disabled = locked;
   dom.guessButton.disabled = locked;
   dom.newGameBtn.disabled = locked;
+
   if (locked) {
-    hideCelebration();
-    dom.guessInput.value = "";
-    dom.guessNotes.value = "";
-    crossedDigits = [];
-    currentChallengeToken = "";
-    renderDigitTracker();
-    setEmojiReaction("🎯 Steady start");
-    setStatus("🔐 Sign in with Google to start playing.", "status-hint");
+    dom.challengeFriendBtn.disabled = true;
+    dom.copyChallengeBtn.disabled = true;
+    dom.challengeOpponentInput.disabled = true;
   } else {
-    if (!restoreGameFromLocation()) {
-      resetGame();
-    }
+    updateChallengeUi();
   }
 }
 
