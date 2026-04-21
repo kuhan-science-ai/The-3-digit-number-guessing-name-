@@ -6,12 +6,9 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
 
 function getFirebaseConfig() {
-  const host = window.location.hostname;
-  const isLocalHost = host === "localhost" || host === "127.0.0.1";
-
   return {
     apiKey: "AIzaSyASRaubwlYzbd5kcgQ-ZYxqD2YHI2-aaZo",
-    authDomain: isLocalHost ? "the-number-guessing-game-dbdab.firebaseapp.com" : window.location.host,
+    authDomain: "the-number-guessing-game-dbdab.firebaseapp.com",
     projectId: "the-number-guessing-game-dbdab",
     storageBucket: "the-number-guessing-game-dbdab.firebasestorage.app",
     messagingSenderId: "44554448991",
