@@ -37,6 +37,7 @@ function setAuthStatus(message, pending = false) {
 
 function getFriendlyAuthMessage(error) {
   const code = typeof error?.code === "string" ? error.code : "";
+  const rawMessage = error instanceof Error ? error.message : "";
 
   if (code === "auth/cancelled-popup-request") {
     return "Another Google sign-in popup is already open. Close it, then try one click only.";
@@ -66,12 +67,11 @@ function getFriendlyAuthMessage(error) {
     return "Firebase sign-in settings are invalid. Check the Firebase web app config.";
   }
 
-  const message = error instanceof Error ? error.message : "Google sign-in failed.";
-  if (/redirect_uri_mismatch/i.test(message)) {
-    return "Google rejected the sign-in redirect. Use popup sign-in and add your website domain in Firebase Authentication -> Settings -> Authorized domains.";
+  if (/redirect_uri_mismatch/i.test(rawMessage)) {
+    return "Google sign-in is almost ready. Add this redirect URI in Google Cloud: https://the-3-digit-number-guessing-game.onrender.com/__/auth/handler";
   }
 
-  return message.replace(/^Firebase:\s*/i, "").trim();
+  return (rawMessage || "Google sign-in failed.").replace(/^Firebase:\s*/i, "").trim();
 }
 
 async function prepareAuth() {
