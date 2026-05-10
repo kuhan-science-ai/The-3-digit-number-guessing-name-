@@ -426,6 +426,19 @@ h3 {
   grid-column: 2;
 }
 
+.play-panel > .status-panel,
+.play-panel > .game-notes-panel,
+.play-panel > .leaderboard-panel,
+.play-panel > .history-panel {
+  padding: 14px;
+}
+
+.play-panel > .status-panel + .game-notes-panel,
+.play-panel > .game-notes-panel + .leaderboard-panel,
+.play-panel > .leaderboard-panel + .history-panel {
+  margin-top: -6px;
+}
+
 .play-panel > .panel-top {
   align-items: center;
 }
@@ -436,7 +449,7 @@ h3 {
 }
 
 .game-notes-panel .notes-input {
-  min-height: 180px;
+  min-height: 120px;
 }
 
 
@@ -779,7 +792,7 @@ h3 {
 
 .notes-input {
   min-height: 210px;
-  margin-top: 12px;
+  margin-top: 8px;
   padding: 14px 16px;
   line-height: 1.65;
   resize: vertical;
@@ -794,15 +807,15 @@ h3 {
 
 .leaderboard-list {
   display: grid;
-  gap: 10px;
-  margin-top: 12px;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .leaderboard-tabs {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: 14px;
+  gap: 6px;
+  margin-top: 10px;
 }
 
 .leaderboard-item {
@@ -881,8 +894,8 @@ body.focus-mode .status-panel {
 
 .history-list {
   display: grid;
-  gap: 12px;
-  margin-top: 12px;
+  gap: 8px;
+  margin-top: 8px;
   flex: 1;
   min-height: 0;
   max-height: min(74vh, 900px);
