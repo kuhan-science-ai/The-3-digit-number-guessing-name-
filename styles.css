@@ -199,7 +199,7 @@ body::after {
 
 .play-panel {
   display: none;
-  grid-template-columns: minmax(280px, 0.85fr) minmax(320px, 1.15fr);
+  grid-template-columns: 1fr;
   gap: 14px;
   background:
     radial-gradient(circle at top right, rgba(255, 211, 107, 0.12), transparent 24%),
@@ -415,15 +415,11 @@ h3 {
 .play-panel > .settings-panel,
 .play-panel > .mode-panel,
 .play-panel > .tracker-panel,
-.play-panel > .guess-form {
-  grid-column: 1;
-}
-
 .play-panel > .status-panel,
 .play-panel > .notes-panel,
 .play-panel > .leaderboard-panel,
 .play-panel > .history-panel {
-  grid-column: 2;
+  grid-column: 1;
 }
 
 .play-panel > .panel-top {
@@ -851,7 +847,7 @@ h3 {
 }
 
 body.focus-mode .play-panel.is-active {
-  grid-template-columns: minmax(280px, 0.9fr) minmax(300px, 1.1fr);
+  grid-template-columns: 1fr;
 }
 
 body.focus-mode .game-header,
