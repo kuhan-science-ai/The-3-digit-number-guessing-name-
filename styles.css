@@ -759,6 +759,13 @@ h3 {
   text-align: right;
 }
 
+.leaderboard-note {
+  margin: 4px 0 0;
+  color: var(--gold);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
 .history-list {
   display: grid;
   gap: 12px;

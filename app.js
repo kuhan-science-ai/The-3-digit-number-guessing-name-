@@ -22,6 +22,7 @@ const auth = getAuth(firebaseApp);
 const GAME_STORAGE_PREFIX = "number-guessing-game-state-v3";
 const PROFILE_STORAGE_PREFIX = "number-guessing-game-profile-v1";
 const LEADERBOARD_STORAGE_PREFIX = "number-guessing-game-leaderboard-v1";
+const DAILY_ATTEMPT_STORAGE_PREFIX = "number-guessing-game-daily-attempt-v1";
 const SETTINGS_STORAGE_KEY = "number-guessing-game-settings-v1";
 const STREAK_STORAGE_KEY = "number-guessing-game-daily-streak-v1";
 const TUTORIAL_STORAGE_KEY = "number-guessing-game-tutorial-seen-v1";
@@ -317,6 +318,35 @@ function getSuggestedUsername() {
   return `code_master_${Math.floor(Math.random() * 90) + 10}`;
 }
 
+function getTodayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function getPlayerLeaderboardId() {
+  return currentUser?.uid || `name:${sanitizeUsername(currentUsername).toLowerCase() || "guest"}`;
+}
+
+function getDailyAttemptKey(mode = currentMode) {
+  return `${DAILY_ATTEMPT_STORAGE_PREFIX}:${getTodayKey()}:${mode}:${getPlayerLeaderboardId()}`;
+}
+
+function loadDailyAttempt(mode = currentMode) {
+  try {
+    const raw = localStorage.getItem(getDailyAttemptKey(mode));
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveDailyAttempt(mode = currentMode, payload = {}) {
+  localStorage.setItem(getDailyAttemptKey(mode), JSON.stringify({
+    date: getTodayKey(),
+    mode,
+    ...payload,
+  }));
+}
+
 function isDailyRankedGame() {
   return Boolean(isDailyChallenge);
 }
@@ -430,15 +460,20 @@ function setMode(nextMode, { keepRound = false } = {}) {
 
 function updateModeUi() {
   const config = getModeConfig();
+  const dailyAttempt = loadDailyAttempt(currentMode);
   dom.modeDescription.textContent = isDailyChallenge
     ? `Daily ${config.label}: everyone gets the same ${config.length}-digit code today.`
     : config.description;
-  dom.rankedBadge.textContent = isDailyChallenge ? "Daily ranked" : "Practice";
+  dom.rankedBadge.textContent = dailyAttempt?.completed
+    ? "Daily complete"
+    : (isDailyChallenge ? "Daily ranked" : "Practice");
   dom.guessInputLabel.textContent = getGuessHelp();
   dom.guessInput.maxLength = String(config.length);
   dom.guessInput.placeholder = config.placeholder;
   dom.timerBadge.textContent = formatTimer();
   dom.dailyChallengeBtn.classList.toggle("is-active", isDailyChallenge);
+  dom.dailyChallengeBtn.disabled = Boolean(dailyAttempt?.started || dailyAttempt?.completed) || dom.guessInput.disabled;
+  dom.dailyChallengeBtn.textContent = dailyAttempt?.started || dailyAttempt?.completed ? "Daily Played" : "Daily";
 
   dom.modeTabs.querySelectorAll(".mode-tab").forEach((button) => {
     button.classList.toggle("is-active", button.dataset.mode === currentMode);
@@ -464,11 +499,28 @@ function handleModeTabClick(event) {
 }
 
 function startDailyChallenge() {
+  const dailyAttempt = loadDailyAttempt(currentMode);
+  if (dailyAttempt?.completed || dailyAttempt?.started) {
+    isDailyChallenge = false;
+    activeLeaderboardBoard = "daily";
+    renderLeaderboard();
+    setStatus(`You already played today's Daily ${getModeLabel()}. Come back tomorrow for a fresh ranked code.`, "status-hint");
+    updateModeUi();
+    return;
+  }
+
   isDailyChallenge = true;
   activeLeaderboardBoard = "daily";
   currentChallengeToken = "";
   currentChallengeMeta = createChallengeMeta();
   secretNumber = generateDailySecret(currentMode);
+  saveDailyAttempt(currentMode, {
+    started: true,
+    completed: false,
+    startedAt: new Date().toISOString(),
+    username: currentUsername,
+    playerId: getPlayerLeaderboardId(),
+  });
   initializeFreshRound(`Daily ${getModeLabel()} is loaded. ${getGuessHelp()}`);
 }
 
@@ -1188,6 +1240,17 @@ async function handleCopyChallengeLink() {
 function handleGuessSubmit(event) {
   event.preventDefault();
 
+  if (isDailyChallenge) {
+    const dailyAttempt = loadDailyAttempt(currentMode);
+    if (dailyAttempt?.completed) {
+      setStatus(`You already finished today's Daily ${getModeLabel()}. Tomorrow brings a new ranked code.`, "status-hint");
+      dom.guessInput.value = "";
+      dom.guessInput.disabled = true;
+      dom.guessButton.disabled = true;
+      return;
+    }
+  }
+
   const guess = dom.guessInput.value.trim();
   if (!isValidGuess(guess)) {
     setStatus(getGuessHelp(), "status-hint");
@@ -1413,8 +1476,15 @@ function loadLeaderboardScores(mode = currentMode, daily = isDailyChallenge) {
 }
 
 function recordLeaderboardScore(totalAttempts, elapsedSeconds) {
-  const scores = loadLeaderboardScores(currentMode, isDailyChallenge);
+  const playerId = getPlayerLeaderboardId();
+  const scores = loadLeaderboardScores(currentMode, isDailyChallenge)
+    .filter((score) => {
+      const scorePlayerId = score.playerId || `name:${sanitizeUsername(score.username).toLowerCase()}`;
+      return scorePlayerId !== playerId;
+    });
+
   scores.push({
+    playerId,
     username: currentUsername || "Player",
     attempts: totalAttempts,
     seconds: elapsedSeconds,
@@ -1426,6 +1496,15 @@ function recordLeaderboardScore(totalAttempts, elapsedSeconds) {
   scores.sort((left, right) => left.attempts - right.attempts || left.seconds - right.seconds);
   localStorage.setItem(getLeaderboardKey(currentMode, isDailyChallenge), JSON.stringify(scores.slice(0, 6)));
   if (isDailyChallenge) {
+    saveDailyAttempt(currentMode, {
+      started: true,
+      completed: true,
+      completedAt: new Date().toISOString(),
+      attempts: totalAttempts,
+      seconds: elapsedSeconds,
+      username: currentUsername,
+      playerId,
+    });
     recordDailyStreak();
   }
   renderLeaderboard();
@@ -1443,7 +1522,7 @@ function loadDailyStreak() {
 function getDateKey(offsetDays = 0) {
   const date = new Date();
   date.setDate(date.getDate() + offsetDays);
-  return date.toISOString().slice(0, 10);
+  return offsetDays === 0 ? getTodayKey() : date.toISOString().slice(0, 10);
 }
 
 function recordDailyStreak() {
@@ -1503,6 +1582,16 @@ function renderLeaderboard() {
     item.append(rank, name, meta);
     dom.leaderboardList.append(item);
   });
+
+  if (boardDaily) {
+    const played = loadDailyAttempt(boardMode);
+    if (played?.completed) {
+      const note = document.createElement("p");
+      note.className = "leaderboard-note";
+      note.textContent = `You used today's Daily ${getModeLabel(boardMode)} run. Next ranked attempt unlocks tomorrow.`;
+      dom.leaderboardList.append(note);
+    }
+  }
 }
 
 function buildShareText() {
@@ -1729,6 +1818,9 @@ function setGameLocked(locked) {
   }
 
   updateModeUi();
+  if (locked) {
+    dom.dailyChallengeBtn.disabled = true;
+  }
 }
 
 function sanitizeFirebaseMessage(message) {
