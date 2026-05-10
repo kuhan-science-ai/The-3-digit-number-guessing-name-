@@ -14,13 +14,43 @@
 <body>
   <main class="signin-shell">
     <section class="signin-card">
-      <p class="kicker">Player Access</p>
-      <h1>Sign in before you enter the puzzle room.</h1>
-      <p id="authStatus" class="lead auth-lead">Use your Google account to unlock the number guessing game.</p>
-      <div class="signin-actions">
-        <button id="googleSignInBtn" class="primary-btn" type="button">Continue with Google</button>
+      <div class="signin-copy">
+        <p class="kicker">3 Digit Duel</p>
+        <h1>Crack codes, race friends, and climb the board.</h1>
+        <p id="authStatus" class="lead auth-lead">Use your Google account to unlock the number guessing game.</p>
+        <div class="signin-actions">
+          <button id="googleSignInBtn" class="primary-btn" type="button">Continue with Google</button>
+        </div>
+        <p class="signin-note">After sign-in, you will be sent directly to the game board.</p>
       </div>
-      <p class="signin-note">After sign-in, you will be sent directly to the game board.</p>
+
+      <div class="signin-preview" aria-hidden="true">
+        <div class="preview-orbit">
+          <span>7</span>
+          <span>4</span>
+          <span>9</span>
+        </div>
+        <div class="preview-board">
+          <p class="mini-label">Live puzzle preview</p>
+          <div class="preview-row strong">
+            <span>479</span>
+            <strong>Hidden code</strong>
+          </div>
+          <div class="preview-row">
+            <span>498</span>
+            <strong>1 right spot, 1 wrong spot</strong>
+          </div>
+          <div class="preview-row">
+            <span>762</span>
+            <strong>1 right spot</strong>
+          </div>
+          <div class="preview-score">
+            <span>Daily</span>
+            <span>Duel</span>
+            <span>Time Attack</span>
+          </div>
+        </div>
+      </div>
     </section>
   </main>
 

@@ -34,7 +34,24 @@
       <p class="mini-label">Puzzle solved</p>
       <h2>You cracked the code.</h2>
       <p id="celebrationText" class="celebration-text">You found the secret number.</p>
-      <button id="celebrationCloseBtn" class="primary-btn" type="button">Keep Playing</button>
+      <div class="celebration-stats">
+        <div>
+          <span id="celebrationAttempts">0</span>
+          <small>Attempts</small>
+        </div>
+        <div>
+          <span id="celebrationTime">0:00</span>
+          <small>Time</small>
+        </div>
+        <div>
+          <span id="celebrationMode">Classic</span>
+          <small>Mode</small>
+        </div>
+      </div>
+      <div class="celebration-actions">
+        <button id="shareResultBtn" class="primary-btn" type="button">Share Result</button>
+        <button id="celebrationCloseBtn" class="ghost-btn" type="button">Keep Playing</button>
+      </div>
     </div>
   </div>
 
@@ -146,6 +163,7 @@
           </div>
           <div class="panel-top-actions">
             <span id="attemptCount" class="attempt-badge">0 attempts</span>
+            <span id="timerBadge" class="attempt-badge">0:00</span>
             <div class="profile-menu">
               <button id="profileMenuBtn" class="profile-trigger" type="button" aria-label="Open profile menu" aria-expanded="false">
                 <img id="profileAvatar" class="profile-avatar" alt="Signed in player profile" />
@@ -161,6 +179,23 @@
             </div>
           </div>
         </div>
+
+        <section class="mode-panel">
+          <div class="tracker-top">
+            <div>
+              <p class="mini-label">Game modes</p>
+              <h3>Choose your challenge</h3>
+            </div>
+            <button id="dailyChallengeBtn" class="mini-ghost-btn" type="button">Daily</button>
+          </div>
+          <div id="modeTabs" class="mode-tabs" role="tablist" aria-label="Game mode">
+            <button type="button" class="mode-tab is-active" data-mode="classic">Classic</button>
+            <button type="button" class="mode-tab" data-mode="easy">Easy</button>
+            <button type="button" class="mode-tab" data-mode="hard">Hard</button>
+            <button type="button" class="mode-tab" data-mode="time">Time Attack</button>
+          </div>
+          <p id="modeDescription" class="mode-description">Classic: 3 unique digits from 1 to 9.</p>
+        </section>
 
         <section class="tracker-panel">
           <div class="tracker-top">
@@ -185,8 +220,22 @@
 
         <form id="guessForm" class="guess-form" autocomplete="off">
           <div id="guessEmojiBurst" class="guess-emoji-burst" aria-hidden="true"></div>
-          <label class="input-label" for="guessInput">Enter a 3-digit number from 1 to 9 with no repeated digits</label>
-          <input id="guessInput" class="guess-input" type="text" inputmode="numeric" pattern="[1-9]*" maxlength="3" placeholder="479" />
+          <label id="guessInputLabel" class="input-label" for="guessInput">Enter a 3-digit number from 1 to 9 with no repeated digits</label>
+          <input id="guessInput" class="guess-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="479" />
+          <div id="numberPad" class="number-pad" aria-label="Number keypad">
+            <button type="button" data-keypad="1">1</button>
+            <button type="button" data-keypad="2">2</button>
+            <button type="button" data-keypad="3">3</button>
+            <button type="button" data-keypad="4">4</button>
+            <button type="button" data-keypad="5">5</button>
+            <button type="button" data-keypad="6">6</button>
+            <button type="button" data-keypad="7">7</button>
+            <button type="button" data-keypad="8">8</button>
+            <button type="button" data-keypad="9">9</button>
+            <button id="keypadBackspaceBtn" type="button" class="keypad-tool" data-keypad="backspace">Delete</button>
+            <button id="keypadZeroBtn" type="button" data-keypad="0">0</button>
+            <button id="keypadClearBtn" type="button" class="keypad-tool" data-keypad="clear">Clear</button>
+          </div>
           <div class="button-row">
             <button id="guessButton" class="primary-btn" type="submit">Submit Guess</button>
             <button id="newGameBtn" class="ghost-btn" type="button">New Secret Number</button>
@@ -197,6 +246,18 @@
           <p class="mini-label">Live clue · 🔍</p>
           <div id="emojiReaction" class="emoji-reaction" aria-live="polite">🎯 Steady start</div>
           <p id="statusText" class="status-copy">A new secret number is ready. Enter your first guess.</p>
+        </section>
+
+        <section class="leaderboard-panel">
+          <div class="history-top">
+            <div>
+              <p class="mini-label">Top scores</p>
+              <h3>Local leaderboard</h3>
+            </div>
+          </div>
+          <div id="leaderboardList" class="leaderboard-list">
+            <p class="empty-state">Finish a puzzle to record your first score.</p>
+          </div>
         </section>
 
         <section class="history-panel">
