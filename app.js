@@ -156,7 +156,7 @@ let attempts = 0;
 let crossedDigits = [];
 let currentChallengeToken = "";
 let currentChallengeMeta = createChallengeMeta();
-let roundStartedAt = Date.now();
+let roundStartedAt = null;
 let timerInterval = null;
 let solvedSummary = null;
 let settings = loadSettings();
@@ -213,7 +213,7 @@ function init() {
   renderLeaderboard();
   updateChallengeUi();
   setGameLocked(true);
-  startTimer();
+  updateTimerUi();
   registerServiceWorker();
 }
 
@@ -596,15 +596,32 @@ function seededRandom(seed) {
   };
 }
 
-function startTimer() {
-  if (timerInterval) {
-    clearInterval(timerInterval);
+function stopTimer() {
+  if (!timerInterval) {
+    return;
   }
-  timerInterval = window.setInterval(updateTimerUi, 1000);
+
+  clearInterval(timerInterval);
+  timerInterval = null;
+}
+
+function ensureTimerStarted() {
+  if (!roundStartedAt) {
+    roundStartedAt = Date.now();
+  }
+
+  if (!timerInterval) {
+    timerInterval = window.setInterval(updateTimerUi, 1000);
+  }
+
   updateTimerUi();
 }
 
 function getElapsedSeconds() {
+  if (!roundStartedAt) {
+    return 0;
+  }
+
   return Math.max(0, Math.floor((Date.now() - roundStartedAt) / 1000));
 }
 
@@ -632,6 +649,7 @@ function updateTimerUi() {
     dom.guessButton.disabled = true;
     setEmojiReaction("⏱️ Time up");
     setStatus(`Time is up. The secret number was ${secretNumber}. Start a new Time Attack to try again.`, "status-hint");
+    stopTimer();
     saveGameState();
   }
 }
@@ -895,6 +913,7 @@ function saveGameState() {
     secretNumber,
     currentMode,
     isDailyChallenge,
+    timerStarted: Boolean(roundStartedAt),
     roundStartedAt,
     attempts,
     challengeToken: currentChallengeToken,
@@ -1053,8 +1072,8 @@ function restoreGameState(saved = loadGameState()) {
   currentMode = savedMode;
   isDailyChallenge = Boolean(saved.isDailyChallenge);
   secretNumber = saved.secretNumber;
-  roundStartedAt = Number(saved.roundStartedAt) || Date.now();
   attempts = Number(saved.attempts) || 0;
+  roundStartedAt = saved.timerStarted || attempts > 0 ? Number(saved.roundStartedAt) || Date.now() : null;
   currentChallengeToken = typeof saved.challengeToken === "string" ? saved.challengeToken : "";
   currentChallengeMeta = createChallengeMeta(
     saved.challengeMeta?.creatorUsername,
@@ -1084,7 +1103,15 @@ function restoreGameState(saved = loadGameState()) {
   dom.guessNotes.value = saved.notes || "";
 
   if (!solved) {
+    if (roundStartedAt) {
+      ensureTimerStarted();
+    } else {
+      updateTimerUi();
+    }
     dom.guessInput.focus();
+  } else {
+    stopTimer();
+    updateTimerUi();
   }
 
   return true;
@@ -1092,8 +1119,9 @@ function restoreGameState(saved = loadGameState()) {
 function initializeFreshRound(statusText = DEFAULT_STATUS) {
   attempts = 0;
   crossedDigits = [];
-  roundStartedAt = Date.now();
+  roundStartedAt = null;
   solvedSummary = null;
+  stopTimer();
   hideCelebration();
   dom.guessInput.disabled = false;
   dom.guessButton.disabled = false;
@@ -1109,6 +1137,7 @@ function initializeFreshRound(statusText = DEFAULT_STATUS) {
   syncChallengeUrl();
   setEmojiReaction("🎯 Steady start");
   updateCoachPanel();
+  updateTimerUi();
   setStatus(statusText, "status-hint");
   saveGameState();
   dom.guessInput.focus();
@@ -1299,6 +1328,7 @@ function handleGuessSubmit(event) {
     return;
   }
 
+  ensureTimerStarted();
   attempts += 1;
   updateAttemptCount();
   playFeedback("tap");
@@ -1321,6 +1351,7 @@ function handleGuessSubmit(event) {
     dom.guessInput.value = "";
     dom.guessInput.disabled = true;
     dom.guessButton.disabled = true;
+    stopTimer();
     saveGameState();
     return;
   }
@@ -1340,6 +1371,10 @@ function handleGuessInput() {
   if (dom.guessInput.value !== sanitized) {
     dom.guessInput.value = sanitized;
     setStatus(getGuessHelp(), "status-hint");
+  }
+
+  if (sanitized) {
+    ensureTimerStarted();
   }
 
   saveGameState();
@@ -1400,6 +1435,10 @@ function handleGuessPaste(event) {
 
   if (sanitized !== merged) {
     setStatus(getGuessHelp(), "status-hint");
+  }
+
+  if (sanitized) {
+    ensureTimerStarted();
   }
 
   saveGameState();
@@ -1716,7 +1755,8 @@ function renderLockedShell(message) {
   currentChallengeMeta = createChallengeMeta();
   isDailyChallenge = false;
   secretNumber = generateSecretNumber();
-  roundStartedAt = Date.now();
+  roundStartedAt = null;
+  stopTimer();
   dom.guessInput.value = "";
   dom.guessNotes.value = "";
   dom.challengeLink.value = "";
@@ -1727,6 +1767,7 @@ function renderLockedShell(message) {
   renderDigitTracker();
   renderLeaderboard();
   updateAttemptCount();
+  updateTimerUi();
   setEmojiReaction("🎯 Steady start");
   setStatus(message, "status-hint");
   updateChallengeUi();
