@@ -6,6 +6,8 @@
   <title>Sign In | Number Guessing Game</title>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1412246666235077"
     crossorigin="anonymous"></script>
+  <link rel="manifest" href="./manifest.json" />
+  <meta name="theme-color" content="#140f33" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -17,11 +19,12 @@
       <div class="signin-copy">
         <p class="kicker">3 Digit Duel</p>
         <h1>Crack codes, race friends, and climb the board.</h1>
-        <p id="authStatus" class="lead auth-lead">Use your Google account to unlock the number guessing game.</p>
+        <p id="authStatus" class="lead auth-lead">Use Google for saved identity, or jump in instantly as a guest.</p>
         <div class="signin-actions">
           <button id="googleSignInBtn" class="primary-btn" type="button">Continue with Google</button>
+          <a class="ghost-btn signin-guest-link" href="/game">Play as Guest</a>
         </div>
-        <p class="signin-note">After sign-in, you will be sent directly to the game board.</p>
+        <p class="signin-note">Guests can play instantly. Sign in later for named challenges and saved identity.</p>
       </div>
 
       <div class="signin-preview" aria-hidden="true">

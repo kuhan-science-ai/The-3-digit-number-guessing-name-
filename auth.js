@@ -94,7 +94,7 @@ onAuthStateChanged(auth, (user) => {
   }
 
   if (!isSigningIn) {
-    setAuthStatus("Use your Google account to unlock the number guessing game.", false);
+    setAuthStatus("Use Google for saved identity, or jump in instantly as a guest.", false);
   }
 });
 

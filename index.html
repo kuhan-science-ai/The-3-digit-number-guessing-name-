@@ -6,6 +6,8 @@
   <title>Number Guessing Game</title>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1412246666235077"
     crossorigin="anonymous"></script>
+  <link rel="manifest" href="./manifest.json" />
+  <meta name="theme-color" content="#140f33" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -70,6 +72,34 @@
         <p id="usernameError" class="username-error">Use 3-18 letters, numbers, or underscores.</p>
         <button class="primary-btn username-submit" type="submit">Save username</button>
       </form>
+    </section>
+  </div>
+
+  <div id="tutorialOverlay" class="username-overlay" hidden>
+    <section class="username-card tutorial-card" role="dialog" aria-modal="true" aria-labelledby="tutorialTitle">
+      <p class="mini-label">Quick start</p>
+      <h2 id="tutorialTitle">Learn the loop in 20 seconds</h2>
+      <div class="tutorial-steps">
+        <article>
+          <span>1</span>
+          <strong>Guess</strong>
+          <p>Pick a number using the keypad. Classic uses unique digits from 1 to 9.</p>
+        </article>
+        <article>
+          <span>2</span>
+          <strong>Read</strong>
+          <p>The clue tells you how many digits are right, and whether they are in the right spot.</p>
+        </article>
+        <article>
+          <span>3</span>
+          <strong>Narrow</strong>
+          <p>Cross out impossible digits and keep testing until the full code clicks.</p>
+        </article>
+      </div>
+      <div class="button-row tutorial-actions">
+        <button id="tutorialStartBtn" class="primary-btn" type="button">Start Playing</button>
+        <button id="tutorialSkipBtn" class="ghost-btn" type="button">Skip Tutorial</button>
+      </div>
     </section>
   </div>
 
@@ -164,7 +194,7 @@
           <div class="panel-top-actions">
             <span id="attemptCount" class="attempt-badge">0 attempts</span>
             <span id="timerBadge" class="attempt-badge">0:00</span>
-            <div class="profile-menu">
+          <div class="profile-menu">
               <button id="profileMenuBtn" class="profile-trigger" type="button" aria-label="Open profile menu" aria-expanded="false">
                 <img id="profileAvatar" class="profile-avatar" alt="Signed in player profile" />
               </button>
@@ -173,12 +203,60 @@
                 <p id="profileHandle" class="profile-handle">Signed in with Google</p>
                 <div class="profile-actions">
                   <button id="editUsernameBtn" class="ghost-btn profile-edit" type="button">Change username</button>
+                  <button id="settingsBtn" class="ghost-btn profile-edit" type="button">Settings</button>
                   <button id="signOutBtn" class="ghost-btn profile-signout" type="button">Sign out</button>
                 </div>
               </div>
             </div>
           </div>
         </div>
+
+        <section id="settingsPanel" class="settings-panel" hidden>
+          <div class="tracker-top">
+            <div>
+              <p class="mini-label">Settings</p>
+              <h3>Player options</h3>
+            </div>
+            <button id="settingsCloseBtn" class="mini-ghost-btn" type="button">Close</button>
+          </div>
+          <div class="settings-grid">
+            <label class="setting-row">
+              <span>
+                <strong>Beginner coach</strong>
+                <small>Extra learning tips after each non-daily guess.</small>
+              </span>
+              <input id="beginnerHintsToggle" type="checkbox" />
+            </label>
+            <label class="setting-row">
+              <span>
+                <strong>Sound feedback</strong>
+                <small>Soft keypad and win sounds.</small>
+              </span>
+              <input id="soundToggle" type="checkbox" />
+            </label>
+            <label class="setting-row">
+              <span>
+                <strong>Mobile vibration</strong>
+                <small>Small vibration on keypad and wins where supported.</small>
+              </span>
+              <input id="vibrationToggle" type="checkbox" />
+            </label>
+            <label class="setting-row">
+              <span>
+                <strong>Show tutorial</strong>
+                <small>Open the quick-start guide again.</small>
+              </span>
+              <button id="showTutorialBtn" class="mini-ghost-btn" type="button">Open</button>
+            </label>
+            <label class="setting-row">
+              <span>
+                <strong>Install app</strong>
+                <small>Add the game to your phone or desktop.</small>
+              </span>
+              <button id="installAppBtn" class="mini-ghost-btn" type="button" disabled>Install</button>
+            </label>
+          </div>
+        </section>
 
         <section class="mode-panel">
           <div class="tracker-top">
@@ -195,6 +273,10 @@
             <button type="button" class="mode-tab" data-mode="time">Time Attack</button>
           </div>
           <p id="modeDescription" class="mode-description">Classic: 3 unique digits from 1 to 9.</p>
+          <div class="mode-meta-row">
+            <span id="streakBadge" class="attempt-badge">0 day streak</span>
+            <span id="rankedBadge" class="attempt-badge">Practice</span>
+          </div>
         </section>
 
         <section class="tracker-panel">
@@ -246,6 +328,10 @@
           <p class="mini-label">Live clue · 🔍</p>
           <div id="emojiReaction" class="emoji-reaction" aria-live="polite">🎯 Steady start</div>
           <p id="statusText" class="status-copy">A new secret number is ready. Enter your first guess.</p>
+          <div id="coachPanel" class="coach-panel" hidden>
+            <p class="mini-label">Beginner coach</p>
+            <p id="coachText">Turn on beginner coach in settings to see learning tips here.</p>
+          </div>
         </section>
 
         <section class="leaderboard-panel">
@@ -254,6 +340,13 @@
               <p class="mini-label">Top scores</p>
               <h3>Local leaderboard</h3>
             </div>
+          </div>
+          <div id="leaderboardTabs" class="leaderboard-tabs" aria-label="Leaderboard board">
+            <button type="button" class="mode-tab is-active" data-board="classic">Classic</button>
+            <button type="button" class="mode-tab" data-board="easy">Easy</button>
+            <button type="button" class="mode-tab" data-board="hard">Hard</button>
+            <button type="button" class="mode-tab" data-board="time">Time</button>
+            <button type="button" class="mode-tab" data-board="daily">Daily</button>
           </div>
           <div id="leaderboardList" class="leaderboard-list">
             <p class="empty-state">Finish a puzzle to record your first score.</p>
@@ -276,7 +369,7 @@
     </section>
   </main>
 
-  <script type="module" src="./app.js?v=20260417-10"></script>
+  <script type="module" src="./app.js?v=20260417-11"></script>
 </body>
 </html>
 

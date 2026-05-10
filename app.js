@@ -22,6 +22,9 @@ const auth = getAuth(firebaseApp);
 const GAME_STORAGE_PREFIX = "number-guessing-game-state-v3";
 const PROFILE_STORAGE_PREFIX = "number-guessing-game-profile-v1";
 const LEADERBOARD_STORAGE_PREFIX = "number-guessing-game-leaderboard-v1";
+const SETTINGS_STORAGE_KEY = "number-guessing-game-settings-v1";
+const STREAK_STORAGE_KEY = "number-guessing-game-daily-streak-v1";
+const TUTORIAL_STORAGE_KEY = "number-guessing-game-tutorial-seen-v1";
 const CHALLENGE_PARAM = "challenge";
 const CHALLENGE_FROM_PARAM = "from";
 const CHALLENGE_TO_PARAM = "to";
@@ -30,6 +33,12 @@ const USERNAME_PATTERN = /^[A-Za-z0-9_]{3,18}$/;
 const DEFAULT_AVATAR = "https://www.gstatic.com/images/branding/product/1x/avatar_circle_blue_512dp.png";
 const DEFAULT_STATUS = "A new secret number is ready. Enter your first guess.";
 const DEFAULT_USERNAME_HELP = "Use 3-18 letters, numbers, or underscores.";
+const GUEST_UID = "guest-player";
+const DEFAULT_SETTINGS = {
+  beginnerHints: true,
+  sound: false,
+  vibration: true,
+};
 const GAME_MODES = {
   classic: {
     label: "Classic",
@@ -78,6 +87,11 @@ const dom = {
   modeDescription: document.getElementById("modeDescription"),
   dailyChallengeBtn: document.getElementById("dailyChallengeBtn"),
   numberPad: document.getElementById("numberPad"),
+  streakBadge: document.getElementById("streakBadge"),
+  rankedBadge: document.getElementById("rankedBadge"),
+  coachPanel: document.getElementById("coachPanel"),
+  coachText: document.getElementById("coachText"),
+  leaderboardTabs: document.getElementById("leaderboardTabs"),
   leaderboardList: document.getElementById("leaderboardList"),
   challengeFriendBtn: document.getElementById("challengeFriendBtn"),
   copyChallengeBtn: document.getElementById("copyChallengeBtn"),
@@ -91,6 +105,14 @@ const dom = {
   profileName: document.getElementById("profileName"),
   profileHandle: document.getElementById("profileHandle"),
   editUsernameBtn: document.getElementById("editUsernameBtn"),
+  settingsBtn: document.getElementById("settingsBtn"),
+  settingsPanel: document.getElementById("settingsPanel"),
+  settingsCloseBtn: document.getElementById("settingsCloseBtn"),
+  beginnerHintsToggle: document.getElementById("beginnerHintsToggle"),
+  soundToggle: document.getElementById("soundToggle"),
+  vibrationToggle: document.getElementById("vibrationToggle"),
+  showTutorialBtn: document.getElementById("showTutorialBtn"),
+  installAppBtn: document.getElementById("installAppBtn"),
   signOutBtn: document.getElementById("signOutBtn"),
   emojiReaction: document.getElementById("emojiReaction"),
   statusText: document.getElementById("statusText"),
@@ -111,12 +133,17 @@ const dom = {
   usernameSetupForm: document.getElementById("usernameSetupForm"),
   usernameInput: document.getElementById("usernameInput"),
   usernameError: document.getElementById("usernameError"),
+  tutorialOverlay: document.getElementById("tutorialOverlay"),
+  tutorialStartBtn: document.getElementById("tutorialStartBtn"),
+  tutorialSkipBtn: document.getElementById("tutorialSkipBtn"),
 };
 
 let currentUser = null;
 let currentUsername = "";
+let isGuestPlayer = false;
 let currentMode = "classic";
 let isDailyChallenge = false;
+let activeLeaderboardBoard = "classic";
 let secretNumber = generateSecretNumber();
 let attempts = 0;
 let crossedDigits = [];
@@ -125,6 +152,8 @@ let currentChallengeMeta = createChallengeMeta();
 let roundStartedAt = Date.now();
 let timerInterval = null;
 let solvedSummary = null;
+let settings = loadSettings();
+let deferredInstallPrompt = null;
 
 init();
 
@@ -137,6 +166,7 @@ function init() {
   dom.modeTabs.addEventListener("click", handleModeTabClick);
   dom.dailyChallengeBtn.addEventListener("click", startDailyChallenge);
   dom.numberPad.addEventListener("click", handleNumberPadClick);
+  dom.leaderboardTabs.addEventListener("click", handleLeaderboardTabClick);
   dom.guessNotes.addEventListener("input", handleNotesInput);
   dom.digitTracker.addEventListener("click", handleDigitTrackerClick);
   dom.clearTrackerBtn.addEventListener("click", clearDigitTracker);
@@ -148,10 +178,20 @@ function init() {
   dom.celebrationCloseBtn.addEventListener("click", hideCelebration);
   dom.signOutBtn.addEventListener("click", handleSignOut);
   dom.editUsernameBtn.addEventListener("click", handleEditUsername);
+  dom.settingsBtn.addEventListener("click", showSettingsPanel);
+  dom.settingsCloseBtn.addEventListener("click", hideSettingsPanel);
+  dom.beginnerHintsToggle.addEventListener("change", handleSettingsChange);
+  dom.soundToggle.addEventListener("change", handleSettingsChange);
+  dom.vibrationToggle.addEventListener("change", handleSettingsChange);
+  dom.showTutorialBtn.addEventListener("click", () => showTutorial(true));
+  dom.installAppBtn.addEventListener("click", handleInstallApp);
+  dom.tutorialStartBtn.addEventListener("click", completeTutorial);
+  dom.tutorialSkipBtn.addEventListener("click", completeTutorial);
   dom.profileMenuBtn.addEventListener("click", toggleProfileMenu);
   dom.usernameSetupForm.addEventListener("submit", handleUsernameSetupSubmit);
   dom.usernameInput.addEventListener("input", handleUsernameInput);
   document.addEventListener("click", handleOutsideProfileMenuClick);
+  window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
   window.addEventListener("beforeunload", saveGameState);
   onAuthStateChanged(auth, handleAuthStateChange);
   updateAttemptCount();
@@ -160,10 +200,20 @@ function init() {
   setStatus("🔐 Sign in with Google to start playing.", "status-hint");
   updateProfileUi();
   updateModeUi();
+  updateSettingsUi();
   renderLeaderboard();
   updateChallengeUi();
   setGameLocked(true);
   startTimer();
+  registerServiceWorker();
+}
+
+function registerServiceWorker() {
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/service-worker.js").catch(() => {
+      // The game still works if the browser refuses service worker registration.
+    });
+  }
 }
 
 function createChallengeMeta(creatorUsername = "", opponentUsername = "") {
@@ -171,6 +221,153 @@ function createChallengeMeta(creatorUsername = "", opponentUsername = "") {
     creatorUsername: sanitizeUsername(creatorUsername),
     opponentUsername: sanitizeUsername(opponentUsername),
   };
+}
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
+    return { ...DEFAULT_SETTINGS, ...(raw ? JSON.parse(raw) : {}) };
+  } catch {
+    return { ...DEFAULT_SETTINGS };
+  }
+}
+
+function saveSettings() {
+  localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+}
+
+function updateSettingsUi() {
+  dom.beginnerHintsToggle.checked = Boolean(settings.beginnerHints);
+  dom.soundToggle.checked = Boolean(settings.sound);
+  dom.vibrationToggle.checked = Boolean(settings.vibration);
+  dom.installAppBtn.disabled = !deferredInstallPrompt;
+  updateCoachPanel();
+}
+
+function handleSettingsChange() {
+  settings = {
+    ...settings,
+    beginnerHints: dom.beginnerHintsToggle.checked,
+    sound: dom.soundToggle.checked,
+    vibration: dom.vibrationToggle.checked,
+  };
+  saveSettings();
+  updateSettingsUi();
+}
+
+function showSettingsPanel() {
+  dom.profileDropdown.hidden = true;
+  dom.profileMenuBtn.setAttribute("aria-expanded", "false");
+  dom.settingsPanel.hidden = false;
+}
+
+function hideSettingsPanel() {
+  dom.settingsPanel.hidden = true;
+}
+
+function handleBeforeInstallPrompt(event) {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+  updateSettingsUi();
+}
+
+async function handleInstallApp() {
+  if (!deferredInstallPrompt) {
+    setStatus("Install will appear here when your browser supports it for this site.", "status-hint");
+    return;
+  }
+
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+  updateSettingsUi();
+}
+
+function playFeedback(kind = "tap") {
+  if (settings.vibration && navigator.vibrate) {
+    navigator.vibrate(kind === "win" ? [40, 25, 40] : 14);
+  }
+
+  if (!settings.sound) {
+    return;
+  }
+
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) {
+      return;
+    }
+    const context = new AudioContextClass();
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = "sine";
+    oscillator.frequency.value = kind === "win" ? 720 : 420;
+    gain.gain.setValueAtTime(0.045, context.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.12);
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start();
+    oscillator.stop(context.currentTime + 0.13);
+  } catch {
+    // Feedback is optional; browsers may block audio until user interaction.
+  }
+}
+
+function getSuggestedUsername() {
+  return `code_master_${Math.floor(Math.random() * 90) + 10}`;
+}
+
+function isDailyRankedGame() {
+  return Boolean(isDailyChallenge);
+}
+
+function updateCoachPanel(text = "") {
+  const available = settings.beginnerHints && !isDailyRankedGame();
+  dom.coachPanel.hidden = !available;
+
+  if (!available) {
+    dom.coachText.textContent = isDailyRankedGame()
+      ? "Beginner coach is disabled during daily ranked games."
+      : "Turn on beginner coach in settings to see learning tips here.";
+    return;
+  }
+
+  dom.coachText.textContent = text || "Beginner coach is on. Submit a guess to get a simple learning tip.";
+}
+
+function buildCoachTip(score, guess) {
+  if (isDailyRankedGame()) {
+    return "";
+  }
+
+  if (score.correctPlace === 0 && score.wrongPlace === 0) {
+    return `None of ${guess} belongs in the code. Cross those digits out and test a fresh set.`;
+  }
+
+  if (score.correctPlace > 0 && score.wrongPlace > 0) {
+    return "Keep the right-place digit idea, but move the other matching digit into a different slot next time.";
+  }
+
+  if (score.correctPlace > 0) {
+    return "At least one digit is already sitting in the correct position. Try changing the other positions first.";
+  }
+
+  return "You found a useful digit, but it needs a new position. Rotate those digits and compare the next clue.";
+}
+
+function showTutorial(force = false) {
+  if (!force && localStorage.getItem(TUTORIAL_STORAGE_KEY) === "seen") {
+    return;
+  }
+  dom.tutorialOverlay.hidden = false;
+  document.body.classList.add("modal-open");
+}
+
+function completeTutorial() {
+  localStorage.setItem(TUTORIAL_STORAGE_KEY, "seen");
+  dom.tutorialOverlay.hidden = true;
+  document.body.classList.remove("modal-open");
+  dom.guessInput.focus();
 }
 
 function getModeConfig(mode = currentMode) {
@@ -218,6 +415,7 @@ function setMode(nextMode, { keepRound = false } = {}) {
   }
 
   currentMode = nextMode;
+  activeLeaderboardBoard = nextMode;
   isDailyChallenge = false;
   currentChallengeToken = "";
   currentChallengeMeta = createChallengeMeta();
@@ -235,6 +433,7 @@ function updateModeUi() {
   dom.modeDescription.textContent = isDailyChallenge
     ? `Daily ${config.label}: everyone gets the same ${config.length}-digit code today.`
     : config.description;
+  dom.rankedBadge.textContent = isDailyChallenge ? "Daily ranked" : "Practice";
   dom.guessInputLabel.textContent = getGuessHelp();
   dom.guessInput.maxLength = String(config.length);
   dom.guessInput.placeholder = config.placeholder;
@@ -252,6 +451,8 @@ function updateModeUi() {
       button.disabled = !config.digits.includes(digit) || dom.guessInput.disabled;
     }
   });
+  updateStreakBadge();
+  updateCoachPanel();
 }
 
 function handleModeTabClick(event) {
@@ -264,10 +465,20 @@ function handleModeTabClick(event) {
 
 function startDailyChallenge() {
   isDailyChallenge = true;
+  activeLeaderboardBoard = "daily";
   currentChallengeToken = "";
   currentChallengeMeta = createChallengeMeta();
   secretNumber = generateDailySecret(currentMode);
   initializeFreshRound(`Daily ${getModeLabel()} is loaded. ${getGuessHelp()}`);
+}
+
+function handleLeaderboardTabClick(event) {
+  const target = event.target;
+  if (!(target instanceof HTMLButtonElement) || !target.dataset.board) {
+    return;
+  }
+  activeLeaderboardBoard = target.dataset.board;
+  renderLeaderboard();
 }
 
 function generateDailySecret(mode = currentMode) {
@@ -351,6 +562,7 @@ function handleNumberPadClick(event) {
     dom.guessInput.value = sanitizeGuessValue(dom.guessInput.value + key);
   }
 
+  playFeedback("tap");
   handleGuessInput();
   dom.guessInput.focus();
 }
@@ -407,7 +619,7 @@ function setUsernameMessage(message, isError = false) {
 
 function showUsernameSetup(preset = currentUsername) {
   dom.usernameSetup.hidden = false;
-  dom.usernameInput.value = preset;
+  dom.usernameInput.value = preset || getSuggestedUsername();
   setUsernameMessage(DEFAULT_USERNAME_HELP, false);
   document.body.classList.add("modal-open");
   requestAnimationFrame(() => {
@@ -431,15 +643,22 @@ function handleUsernameInput() {
 }
 
 function updateProfileUi() {
-  const fallbackName = currentUser?.displayName || currentUser?.email || "Player";
+  const fallbackName = isGuestPlayer ? "Guest Player" : (currentUser?.displayName || currentUser?.email || "Player");
   dom.profileAvatar.src = currentUser?.photoURL || DEFAULT_AVATAR;
   dom.profileAvatar.alt = `${fallbackName} profile photo`;
   dom.profileName.textContent = currentUsername || fallbackName;
-  dom.profileHandle.textContent = currentUser?.email ? `Google: ${currentUser.email}` : "Signed in with Google";
+  dom.profileHandle.textContent = isGuestPlayer
+    ? "Playing as guest. Sign in for named friend challenges."
+    : (currentUser?.email ? `Google: ${currentUser.email}` : "Signed in with Google");
+  dom.signOutBtn.textContent = isGuestPlayer ? "Sign in" : "Sign out";
   updateChallengeUi();
 }
 
 function getChallengePanelCopy() {
+  if (isGuestPlayer) {
+    return "Guest play is instant. Sign in with Google when you want named friend challenges.";
+  }
+
   if (!currentUsername) {
     return "Choose your username first, then type an opponent username to create a shared-number duel link.";
   }
@@ -466,7 +685,7 @@ function getChallengePanelCopy() {
 
 function updateChallengeUi() {
   dom.challengeCurrentUsername.textContent = currentUsername ? `@${currentUsername}` : "Choose username";
-  const canCreateChallenge = Boolean(currentUser && currentUsername);
+  const canCreateChallenge = Boolean(currentUser && currentUsername && !isGuestPlayer);
   dom.challengeOpponentInput.disabled = !canCreateChallenge;
   dom.challengeFriendBtn.disabled = !canCreateChallenge;
   dom.copyChallengeBtn.disabled = !currentChallengeToken;
@@ -796,6 +1015,7 @@ function initializeFreshRound(statusText = DEFAULT_STATUS) {
   updateChallengeUi();
   syncChallengeUrl();
   setEmojiReaction("🎯 Steady start");
+  updateCoachPanel();
   setStatus(statusText, "status-hint");
   saveGameState();
   dom.guessInput.focus();
@@ -908,6 +1128,11 @@ function handleChallengeOpponentInput() {
 }
 
 function handleCreateChallenge() {
+  if (isGuestPlayer) {
+    setStatus("Sign in with Google to create named friend challenges.", "status-hint");
+    return;
+  }
+
   if (!currentUsername) {
     showUsernameSetup();
     setStatus("Create your username first so your friend knows who challenged them.", "status-hint");
@@ -972,10 +1197,12 @@ function handleGuessSubmit(event) {
 
   attempts += 1;
   updateAttemptCount();
+  playFeedback("tap");
 
   const score = scoreGuess(secretNumber, guess);
   const hint = buildHint(secretNumber, guess);
   appendHistoryItem(guess, hint);
+  updateCoachPanel(buildCoachTip(score, guess));
   saveGameState();
 
   if (guess === secretNumber) {
@@ -985,6 +1212,7 @@ function handleGuessSubmit(event) {
     popGuessEmoji(reaction);
     setStatus(`🎉 You guessed it. The secret number was ${secretNumber}.`, "status-win");
     recordLeaderboardScore(attempts, elapsedSeconds);
+    playFeedback("win");
     showCelebration(secretNumber, attempts, elapsedSeconds);
     dom.guessInput.value = "";
     dom.guessInput.disabled = true;
@@ -1109,6 +1337,7 @@ function resetGame() {
   currentChallengeToken = "";
   currentChallengeMeta = createChallengeMeta();
   isDailyChallenge = false;
+  activeLeaderboardBoard = currentMode;
   updateChallengeUi();
   syncChallengeUrl();
   secretNumber = generateSecretNumber();
@@ -1169,14 +1398,14 @@ function sentenceCase(text) {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-function getLeaderboardKey() {
-  const dailyKey = isDailyChallenge ? `daily:${new Date().toISOString().slice(0, 10)}` : "regular";
-  return `${LEADERBOARD_STORAGE_PREFIX}:${currentMode}:${dailyKey}`;
+function getLeaderboardKey(mode = currentMode, daily = isDailyChallenge) {
+  const dailyKey = daily ? `daily:${new Date().toISOString().slice(0, 10)}` : "regular";
+  return `${LEADERBOARD_STORAGE_PREFIX}:${mode}:${dailyKey}`;
 }
 
-function loadLeaderboardScores() {
+function loadLeaderboardScores(mode = currentMode, daily = isDailyChallenge) {
   try {
-    const raw = localStorage.getItem(getLeaderboardKey());
+    const raw = localStorage.getItem(getLeaderboardKey(mode, daily));
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
@@ -1184,7 +1413,7 @@ function loadLeaderboardScores() {
 }
 
 function recordLeaderboardScore(totalAttempts, elapsedSeconds) {
-  const scores = loadLeaderboardScores();
+  const scores = loadLeaderboardScores(currentMode, isDailyChallenge);
   scores.push({
     username: currentUsername || "Player",
     attempts: totalAttempts,
@@ -1195,16 +1424,65 @@ function recordLeaderboardScore(totalAttempts, elapsedSeconds) {
   });
 
   scores.sort((left, right) => left.attempts - right.attempts || left.seconds - right.seconds);
-  localStorage.setItem(getLeaderboardKey(), JSON.stringify(scores.slice(0, 6)));
+  localStorage.setItem(getLeaderboardKey(currentMode, isDailyChallenge), JSON.stringify(scores.slice(0, 6)));
+  if (isDailyChallenge) {
+    recordDailyStreak();
+  }
   renderLeaderboard();
 }
 
+function loadDailyStreak() {
+  try {
+    const raw = localStorage.getItem(STREAK_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : { count: 0, lastSolvedDate: "" };
+  } catch {
+    return { count: 0, lastSolvedDate: "" };
+  }
+}
+
+function getDateKey(offsetDays = 0) {
+  const date = new Date();
+  date.setDate(date.getDate() + offsetDays);
+  return date.toISOString().slice(0, 10);
+}
+
+function recordDailyStreak() {
+  const streak = loadDailyStreak();
+  const today = getDateKey();
+  const yesterday = getDateKey(-1);
+
+  if (streak.lastSolvedDate === today) {
+    updateStreakBadge();
+    return;
+  }
+
+  const next = {
+    count: streak.lastSolvedDate === yesterday ? Number(streak.count || 0) + 1 : 1,
+    lastSolvedDate: today,
+  };
+  localStorage.setItem(STREAK_STORAGE_KEY, JSON.stringify(next));
+  updateStreakBadge();
+}
+
+function updateStreakBadge() {
+  const streak = loadDailyStreak();
+  const count = Number(streak.count || 0);
+  dom.streakBadge.textContent = `${count} day ${count === 1 ? "streak" : "streak"}`;
+}
+
 function renderLeaderboard() {
-  const scores = loadLeaderboardScores();
+  const boardMode = activeLeaderboardBoard === "daily" ? currentMode : activeLeaderboardBoard;
+  const boardDaily = activeLeaderboardBoard === "daily";
+  const scores = loadLeaderboardScores(boardMode, boardDaily);
   dom.leaderboardList.innerHTML = "";
 
+  dom.leaderboardTabs.querySelectorAll("[data-board]").forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.board === activeLeaderboardBoard);
+  });
+
   if (!scores.length) {
-    dom.leaderboardList.innerHTML = '<p class="empty-state">Finish a puzzle to record your first score.</p>';
+    const boardLabel = boardDaily ? `Daily ${getModeLabel(boardMode)}` : getModeLabel(boardMode);
+    dom.leaderboardList.innerHTML = `<p class="empty-state">Finish ${boardLabel} to record your first score.</p>`;
     return;
   }
 
@@ -1326,6 +1604,11 @@ function renderLockedShell(message) {
 }
 
 async function handleSignOut() {
+  if (isGuestPlayer) {
+    window.location.replace("/signin");
+    return;
+  }
+
   try {
     await signOut(auth);
     window.location.replace("/signin");
@@ -1390,6 +1673,7 @@ function handleUsernameSetupSubmit(event) {
 function handleAuthStateChange(user) {
   if (user) {
     currentUser = user;
+    isGuestPlayer = false;
     currentUsername = sanitizeUsername(loadPlayerProfile()?.username || "");
     updateProfileUi();
 
@@ -1404,14 +1688,27 @@ function handleAuthStateChange(user) {
     if (!restoreGameFromLocation()) {
       resetGame();
     }
+    showTutorial();
     return;
   }
 
-  currentUser = null;
-  currentUsername = "";
+  currentUser = {
+    uid: GUEST_UID,
+    displayName: "Guest Player",
+    email: "",
+    photoURL: DEFAULT_AVATAR,
+  };
+  isGuestPlayer = true;
+  currentUsername = sanitizeUsername(loadPlayerProfile()?.username || getSuggestedUsername());
+  savePlayerProfile({ username: currentUsername });
   updateProfileUi();
   hideUsernameSetup();
-  window.location.replace("/signin");
+  setGameLocked(false);
+  if (!restoreGameFromLocation()) {
+    resetGame();
+  }
+  setStatus(`Guest mode ready as @${currentUsername}. Sign in later for named friend challenges.`, "status-hint");
+  showTutorial();
 }
 
 function setGameLocked(locked) {
