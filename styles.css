@@ -211,6 +211,21 @@ body::after {
   display: grid;
 }
 
+.game-left-column,
+.game-right-column {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.game-left-column {
+  gap: 14px;
+}
+
+.game-right-column {
+  gap: 6px;
+}
+
 .story-panel::after,
 .play-panel::after {
   content: "";
@@ -411,32 +426,11 @@ h3 {
   padding: 18px;
 }
 
-.play-panel > .panel-top,
-.play-panel > .settings-panel,
-.play-panel > .mode-panel,
-.play-panel > .tracker-panel,
-.play-panel > .guess-form {
-  grid-column: 1;
-}
-
-.play-panel > .status-panel,
-.play-panel > .notes-panel,
-.play-panel > .leaderboard-panel,
-.play-panel > .history-panel {
-  grid-column: 2;
-}
-
-.play-panel > .status-panel,
-.play-panel > .game-notes-panel,
-.play-panel > .leaderboard-panel,
-.play-panel > .history-panel {
+.game-right-column > .status-panel,
+.game-right-column > .game-notes-panel,
+.game-right-column > .leaderboard-panel,
+.game-right-column > .history-panel {
   padding: 14px;
-}
-
-.play-panel > .status-panel + .game-notes-panel,
-.play-panel > .game-notes-panel + .leaderboard-panel,
-.play-panel > .leaderboard-panel + .history-panel {
-  margin-top: -6px;
 }
 
 .play-panel > .panel-top {
@@ -1306,18 +1300,6 @@ body.focus-mode .status-panel {
 @media (max-width: 980px) {
   .play-panel.is-active {
     grid-template-columns: 1fr;
-  }
-
-  .play-panel > .panel-top,
-  .play-panel > .settings-panel,
-  .play-panel > .mode-panel,
-  .play-panel > .tracker-panel,
-  .play-panel > .guess-form,
-  .play-panel > .status-panel,
-  .play-panel > .notes-panel,
-  .play-panel > .leaderboard-panel,
-  .play-panel > .history-panel {
-    grid-column: 1;
   }
 }
 
