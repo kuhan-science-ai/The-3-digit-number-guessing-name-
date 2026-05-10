@@ -1073,7 +1073,7 @@ function restoreGameState(saved = loadGameState()) {
   isDailyChallenge = Boolean(saved.isDailyChallenge);
   secretNumber = saved.secretNumber;
   attempts = Number(saved.attempts) || 0;
-  roundStartedAt = saved.timerStarted || attempts > 0 ? Number(saved.roundStartedAt) || Date.now() : null;
+  roundStartedAt = attempts > 0 ? Number(saved.roundStartedAt) || Date.now() : null;
   currentChallengeToken = typeof saved.challengeToken === "string" ? saved.challengeToken : "";
   currentChallengeMeta = createChallengeMeta(
     saved.challengeMeta?.creatorUsername,
@@ -1373,10 +1373,6 @@ function handleGuessInput() {
     setStatus(getGuessHelp(), "status-hint");
   }
 
-  if (sanitized) {
-    ensureTimerStarted();
-  }
-
   saveGameState();
 }
 
@@ -1435,10 +1431,6 @@ function handleGuessPaste(event) {
 
   if (sanitized !== merged) {
     setStatus(getGuessHelp(), "status-hint");
-  }
-
-  if (sanitized) {
-    ensureTimerStarted();
   }
 
   saveGameState();
