@@ -2,10 +2,12 @@
 import {
   browserLocalPersistence,
   getAuth,
+  getRedirectResult,
   GoogleAuthProvider,
   onAuthStateChanged,
   setPersistence,
   signInWithPopup,
+  signInWithRedirect,
 } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
 
 function getFirebaseConfig() {
@@ -23,6 +25,7 @@ function getFirebaseConfig() {
 const auth = getAuth(initializeApp(getFirebaseConfig()));
 const provider = new GoogleAuthProvider();
 let isSigningIn = false;
+let checkedRedirectResult = false;
 
 const dom = {
   googleSignInBtn: document.getElementById("googleSignInBtn"),
@@ -33,6 +36,12 @@ function setAuthStatus(message, pending = false) {
   dom.authStatus.textContent = message;
   dom.googleSignInBtn.disabled = pending;
   dom.googleSignInBtn.textContent = pending ? "Opening Google..." : "Continue with Google";
+}
+
+function shouldUseRedirectSignIn() {
+  const coarsePointer = window.matchMedia?.("(pointer: coarse)")?.matches;
+  const mobileUserAgent = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  return Boolean(coarsePointer || mobileUserAgent);
 }
 
 function getFriendlyAuthMessage(error) {
@@ -53,6 +62,10 @@ function getFriendlyAuthMessage(error) {
 
   if (code === "auth/network-request-failed") {
     return "Network issue while signing in. Check your internet connection and try again.";
+  }
+
+  if (code === "auth/argument-error" && /initial state/i.test(rawMessage)) {
+    return "Mobile sign-in lost its saved state. Try again and keep this tab open until Google sends you back.";
   }
 
   if (code === "auth/unauthorized-domain") {
@@ -82,6 +95,27 @@ async function prepareAuth() {
   }
 }
 
+async function finishRedirectSignIn() {
+  try {
+    setAuthStatus("Checking Google sign-in...", true);
+    const result = await getRedirectResult(auth);
+    checkedRedirectResult = true;
+
+    if (result?.user) {
+      setAuthStatus("Signed in. Sending you to the game...", true);
+      window.location.replace("/game");
+      return;
+    }
+
+    if (!auth.currentUser) {
+      setAuthStatus("Use Google for saved identity, or jump in instantly as a guest.", false);
+    }
+  } catch (error) {
+    checkedRedirectResult = true;
+    setAuthStatus(getFriendlyAuthMessage(error), false);
+  }
+}
+
 if (dom.googleSignInBtn) {
   dom.googleSignInBtn.addEventListener("click", handleGoogleSignIn);
 }
@@ -93,7 +127,7 @@ onAuthStateChanged(auth, (user) => {
     return;
   }
 
-  if (!isSigningIn) {
+  if (!isSigningIn && checkedRedirectResult) {
     setAuthStatus("Use Google for saved identity, or jump in instantly as a guest.", false);
   }
 });
@@ -108,13 +142,31 @@ async function handleGoogleSignIn() {
   setAuthStatus("Opening Google sign-in...", true);
 
   try {
+    if (shouldUseRedirectSignIn()) {
+      await signInWithRedirect(auth, provider);
+      return;
+    }
+
     await signInWithPopup(auth, provider);
     setAuthStatus("Signed in. Sending you to the game...", true);
     window.location.replace("/game");
   } catch (error) {
+    const code = typeof error?.code === "string" ? error.code : "";
+    if (["auth/popup-blocked", "auth/popup-closed-by-user", "auth/cancelled-popup-request"].includes(code)) {
+      try {
+        setAuthStatus("Popup did not work. Redirecting to Google instead...", true);
+        await signInWithRedirect(auth, provider);
+        return;
+      } catch (redirectError) {
+        setAuthStatus(getFriendlyAuthMessage(redirectError), false);
+        isSigningIn = false;
+        return;
+      }
+    }
+
     setAuthStatus(getFriendlyAuthMessage(error), false);
     isSigningIn = false;
   }
 }
 
-prepareAuth();
+prepareAuth().then(finishRedirectSignIn);

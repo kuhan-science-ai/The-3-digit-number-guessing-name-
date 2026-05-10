@@ -105,7 +105,37 @@
 
   <main class="page-shell">
     <section class="game-layout">
-      <aside class="story-panel">
+      <header class="game-header">
+        <div>
+          <p class="mini-label">3 Digit Duel</p>
+          <h2>Pick your space</h2>
+        </div>
+        <div class="panel-top-actions">
+          <span id="attemptCount" class="attempt-badge">0 attempts</span>
+          <span id="timerBadge" class="attempt-badge">0:00</span>
+          <div class="profile-menu">
+            <button id="profileMenuBtn" class="profile-trigger" type="button" aria-label="Open profile menu" aria-expanded="false">
+              <img id="profileAvatar" class="profile-avatar" alt="Signed in player profile" />
+            </button>
+            <div id="profileDropdown" class="profile-dropdown" hidden>
+              <p id="profileName" class="profile-name">Player</p>
+              <p id="profileHandle" class="profile-handle">Signed in with Google</p>
+              <div class="profile-actions">
+                <button id="editUsernameBtn" class="ghost-btn profile-edit" type="button">Change username</button>
+                <button id="settingsBtn" class="ghost-btn profile-edit" type="button">Settings</button>
+                <button id="signOutBtn" class="ghost-btn profile-signout" type="button">Sign out</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <nav id="gamePageTabs" class="game-page-tabs" aria-label="Game sections">
+        <button class="game-page-tab is-active" type="button" data-tab="intro">Intro & Rules</button>
+        <button class="game-page-tab" type="button" data-tab="game">Hardcore Game</button>
+      </nav>
+
+      <aside id="introTabPanel" class="story-panel tab-panel is-active">
         <p class="kicker">Logic Puzzle · ✦</p>
         <h1>Crack the hidden 3-digit code.</h1>
         <p class="lead">
@@ -125,20 +155,6 @@
           <p class="example-hint">
             One digit is correct and one digit is correct but in the wrong place.
           </p>
-        </section>
-
-        <section class="notes-panel story-notes-panel">
-          <div class="tracker-top">
-            <div>
-              <p class="mini-label">Player notes · ✍️</p>
-              <h3>Next guess plan</h3>
-            </div>
-          </div>
-          <textarea
-            id="guessNotes"
-            class="notes-input"
-            placeholder="Write the digits you want to test next and why..."
-          ></textarea>
         </section>
 
         <section class="challenge-panel story-challenge-panel">
@@ -185,30 +201,13 @@
         </section>
       </aside>
 
-      <section class="play-panel">
+      <section id="gameTabPanel" class="play-panel tab-panel">
         <div class="panel-top">
           <div>
             <p class="mini-label">Play area · ⚡</p>
-            <h2>Make your guess</h2>
+            <h2>Hardcore game</h2>
           </div>
-          <div class="panel-top-actions">
-            <span id="attemptCount" class="attempt-badge">0 attempts</span>
-            <span id="timerBadge" class="attempt-badge">0:00</span>
-          <div class="profile-menu">
-              <button id="profileMenuBtn" class="profile-trigger" type="button" aria-label="Open profile menu" aria-expanded="false">
-                <img id="profileAvatar" class="profile-avatar" alt="Signed in player profile" />
-              </button>
-              <div id="profileDropdown" class="profile-dropdown" hidden>
-                <p id="profileName" class="profile-name">Player</p>
-                <p id="profileHandle" class="profile-handle">Signed in with Google</p>
-                <div class="profile-actions">
-                  <button id="editUsernameBtn" class="ghost-btn profile-edit" type="button">Change username</button>
-                  <button id="settingsBtn" class="ghost-btn profile-edit" type="button">Settings</button>
-                  <button id="signOutBtn" class="ghost-btn profile-signout" type="button">Sign out</button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <button id="focusModeBtn" class="mini-ghost-btn" type="button" aria-pressed="false">Focus Mode</button>
         </div>
 
         <section id="settingsPanel" class="settings-panel" hidden>
@@ -332,6 +331,20 @@
             <p class="mini-label">Beginner coach</p>
             <p id="coachText">Turn on beginner coach in settings to see learning tips here.</p>
           </div>
+        </section>
+
+        <section class="notes-panel game-notes-panel">
+          <div class="tracker-top">
+            <div>
+              <p class="mini-label">Player notes · ✍️</p>
+              <h3>Next guess plan</h3>
+            </div>
+          </div>
+          <textarea
+            id="guessNotes"
+            class="notes-input"
+            placeholder="Write the digits you want to test next and why..."
+          ></textarea>
         </section>
 
         <section class="leaderboard-panel">

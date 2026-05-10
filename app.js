@@ -77,6 +77,10 @@ const GAME_MODES = {
 };
 
 const dom = {
+  gamePageTabs: document.getElementById("gamePageTabs"),
+  introTabPanel: document.getElementById("introTabPanel"),
+  gameTabPanel: document.getElementById("gameTabPanel"),
+  focusModeBtn: document.getElementById("focusModeBtn"),
   guessForm: document.getElementById("guessForm"),
   guessInputLabel: document.getElementById("guessInputLabel"),
   guessInput: document.getElementById("guessInput"),
@@ -142,6 +146,8 @@ const dom = {
 let currentUser = null;
 let currentUsername = "";
 let isGuestPlayer = false;
+let activePageTab = "intro";
+let focusMode = false;
 let currentMode = "classic";
 let isDailyChallenge = false;
 let activeLeaderboardBoard = "classic";
@@ -159,6 +165,8 @@ let deferredInstallPrompt = null;
 init();
 
 function init() {
+  dom.gamePageTabs.addEventListener("click", handleGamePageTabClick);
+  dom.focusModeBtn.addEventListener("click", toggleFocusMode);
   dom.guessForm.addEventListener("submit", handleGuessSubmit);
   dom.guessInput.addEventListener("keydown", handleGuessKeyDown);
   dom.guessInput.addEventListener("paste", handleGuessPaste);
@@ -215,6 +223,38 @@ function registerServiceWorker() {
       // The game still works if the browser refuses service worker registration.
     });
   }
+}
+
+function handleGamePageTabClick(event) {
+  const target = event.target;
+  if (!(target instanceof HTMLButtonElement) || !target.dataset.tab) {
+    return;
+  }
+  setActivePageTab(target.dataset.tab);
+}
+
+function setActivePageTab(tabName) {
+  activePageTab = tabName === "game" ? "game" : "intro";
+  dom.gamePageTabs.querySelectorAll("[data-tab]").forEach((button) => {
+    const isActive = button.dataset.tab === activePageTab;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-selected", String(isActive));
+  });
+
+  dom.introTabPanel.classList.toggle("is-active", activePageTab === "intro");
+  dom.gameTabPanel.classList.toggle("is-active", activePageTab === "game");
+
+  if (activePageTab === "game") {
+    dom.guessInput.focus();
+  }
+}
+
+function toggleFocusMode() {
+  focusMode = !focusMode;
+  document.body.classList.toggle("focus-mode", focusMode);
+  dom.focusModeBtn.classList.toggle("is-active", focusMode);
+  dom.focusModeBtn.setAttribute("aria-pressed", String(focusMode));
+  dom.focusModeBtn.textContent = focusMode ? "Exit Focus" : "Focus Mode";
 }
 
 function createChallengeMeta(creatorUsername = "", opponentUsername = "") {
@@ -397,6 +437,7 @@ function completeTutorial() {
   localStorage.setItem(TUTORIAL_STORAGE_KEY, "seen");
   dom.tutorialOverlay.hidden = true;
   document.body.classList.remove("modal-open");
+  setActivePageTab("game");
   dom.guessInput.focus();
 }
 
