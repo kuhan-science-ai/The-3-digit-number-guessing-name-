@@ -92,6 +92,10 @@ const dom = {
   modeTabs: document.getElementById("modeTabs"),
   modeDescription: document.getElementById("modeDescription"),
   dailyChallengeBtn: document.getElementById("dailyChallengeBtn"),
+  dailyInfoPanel: document.getElementById("dailyInfoPanel"),
+  dailyDateText: document.getElementById("dailyDateText"),
+  dailyRuleText: document.getElementById("dailyRuleText"),
+  dailyStatusText: document.getElementById("dailyStatusText"),
   numberPad: document.getElementById("numberPad"),
   streakBadge: document.getElementById("streakBadge"),
   rankedBadge: document.getElementById("rankedBadge"),
@@ -379,6 +383,14 @@ function getTodayKey() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function formatTodayLabel() {
+  return new Intl.DateTimeFormat(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  }).format(new Date());
+}
+
 function getPlayerLeaderboardId() {
   return currentUser?.uid || `name:${sanitizeUsername(currentUsername).toLowerCase() || "guest"}`;
 }
@@ -520,19 +532,27 @@ function setMode(nextMode, { keepRound = false } = {}) {
 function updateModeUi() {
   const config = getModeConfig();
   const dailyAttempt = loadDailyAttempt(currentMode);
+  const dailyCompleted = Boolean(dailyAttempt?.completed);
+  const dailyStarted = Boolean(dailyAttempt?.started);
   dom.modeDescription.textContent = isDailyChallenge
-    ? `Daily ${config.label}: everyone gets the same ${config.length}-digit code today.`
+    ? `Daily ${config.label}: today's shared ${config.length}-digit code. One ranked run only.`
     : config.description;
-  dom.rankedBadge.textContent = dailyAttempt?.completed
+  dom.rankedBadge.textContent = dailyCompleted
     ? "Daily complete"
     : (isDailyChallenge ? "Daily ranked" : "Practice");
+  dom.dailyInfoPanel.hidden = !isDailyChallenge && !dailyStarted && !dailyCompleted;
+  dom.dailyDateText.textContent = formatTodayLabel();
+  dom.dailyRuleText.textContent = "One ranked run per day";
+  dom.dailyStatusText.textContent = dailyCompleted
+    ? `Completed in ${dailyAttempt.attempts || 0} ${Number(dailyAttempt.attempts) === 1 ? "guess" : "guesses"}`
+    : (dailyStarted || isDailyChallenge ? "Today's run is active" : "Not started yet");
   dom.guessInputLabel.textContent = getGuessHelp();
   dom.guessInput.maxLength = String(config.length);
   dom.guessInput.placeholder = config.placeholder;
   dom.timerBadge.textContent = formatTimer();
   dom.dailyChallengeBtn.classList.toggle("is-active", isDailyChallenge);
-  dom.dailyChallengeBtn.disabled = Boolean(dailyAttempt?.started || dailyAttempt?.completed) || dom.guessInput.disabled;
-  dom.dailyChallengeBtn.textContent = dailyAttempt?.started || dailyAttempt?.completed ? "Daily Played" : "Daily";
+  dom.dailyChallengeBtn.disabled = Boolean(dailyStarted || dailyCompleted) || dom.guessInput.disabled;
+  dom.dailyChallengeBtn.textContent = dailyStarted || dailyCompleted ? "Daily Played" : "Daily";
 
   dom.modeTabs.querySelectorAll(".mode-tab").forEach((button) => {
     button.classList.toggle("is-active", button.dataset.mode === currentMode);
@@ -923,7 +943,10 @@ function saveGameState() {
   }
 
   const history = [...dom.historyList.querySelectorAll(".history-item")].map((item) => ({
-    heading: item.querySelector("h3")?.textContent || "",
+    heading: [
+      item.querySelector(".history-guess-number")?.textContent,
+      item.querySelector(".history-guess-digits")?.textContent,
+    ].filter(Boolean).join(": ") || item.querySelector("h3")?.textContent || "",
     body: item.querySelector("p")?.textContent || "",
   }));
 
@@ -982,18 +1005,34 @@ function renderHistory(history) {
   }
 
   history.forEach((entry) => {
-    const item = document.createElement("article");
-    item.className = "history-item";
-
-    const heading = document.createElement("h3");
-    heading.textContent = entry.heading;
-
-    const body = document.createElement("p");
-    body.textContent = entry.body;
-
-    item.append(heading, body);
-    dom.historyList.append(item);
+    dom.historyList.append(createHistoryItem(entry.heading, entry.body));
   });
+}
+
+function createHistoryItem(headingText, bodyText) {
+  const item = document.createElement("article");
+  item.className = "history-item";
+
+  const heading = document.createElement("h3");
+  const match = String(headingText || "").match(/^(Guess\s+\d+):?\s*(\d+)?$/i);
+  const guessNumber = document.createElement("span");
+  guessNumber.className = "history-guess-number";
+  guessNumber.textContent = match?.[1] || String(headingText || "Guess");
+
+  heading.append(guessNumber);
+
+  if (match?.[2]) {
+    const guessDigits = document.createElement("span");
+    guessDigits.className = "history-guess-digits";
+    guessDigits.textContent = match[2];
+    heading.append(guessDigits);
+  }
+
+  const body = document.createElement("p");
+  body.textContent = bodyText;
+
+  item.append(heading, body);
+  return item;
 }
 
 function renderDigitTracker() {
@@ -1487,6 +1526,13 @@ function uniqueDigitString(value) {
 }
 
 function resetGame() {
+  if (attempts > 0 && !dom.guessInput.disabled) {
+    const confirmed = window.confirm("Start a new secret number? Your current guesses and notes will be cleared.");
+    if (!confirmed) {
+      return;
+    }
+  }
+
   currentChallengeToken = "";
   currentChallengeMeta = createChallengeMeta();
   isDailyChallenge = false;
@@ -1716,17 +1762,7 @@ function appendHistoryItem(guess, hint) {
     emptyState.remove();
   }
 
-  const item = document.createElement("article");
-  item.className = "history-item";
-
-  const heading = document.createElement("h3");
-  heading.textContent = `Guess ${attempts}: ${guess}`;
-
-  const body = document.createElement("p");
-  body.textContent = hint;
-
-  item.append(heading, body);
-  dom.historyList.prepend(item);
+  dom.historyList.prepend(createHistoryItem(`Guess ${attempts}: ${guess}`, hint));
 }
 
 function updateAttemptCount() {

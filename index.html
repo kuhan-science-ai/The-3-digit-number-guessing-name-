@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css?v=20260511-3" />
+  <link rel="stylesheet" href="./styles.css?v=20260511-4" />
 </head>
 <body>
   <div class="ambient ambient-left" aria-hidden="true"></div>
@@ -278,6 +278,20 @@
               <span id="streakBadge" class="attempt-badge">0 day streak</span>
               <span id="rankedBadge" class="attempt-badge">Practice</span>
             </div>
+            <div id="dailyInfoPanel" class="daily-info-panel" hidden>
+              <div>
+                <span class="daily-info-label">Today</span>
+                <strong id="dailyDateText">Daily puzzle</strong>
+              </div>
+              <div>
+                <span class="daily-info-label">Rule</span>
+                <strong id="dailyRuleText">One ranked run per day</strong>
+              </div>
+              <div>
+                <span class="daily-info-label">Status</span>
+                <strong id="dailyStatusText">Not started</strong>
+              </div>
+            </div>
           </section>
 
           <form id="guessForm" class="guess-form" autocomplete="off">
@@ -397,7 +411,7 @@
     </section>
   </main>
 
-  <script type="module" src="./app.js?v=20260511-3"></script>
+  <script type="module" src="./app.js?v=20260511-4"></script>
 </body>
 </html>
 
