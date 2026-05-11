@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css?v=20260511-6" />
+  <link rel="stylesheet" href="./styles.css?v=20260511-7" />
 </head>
 <body>
   <div class="ambient ambient-left" aria-hidden="true"></div>
@@ -454,13 +454,13 @@
           <div class="tracker-top">
             <div>
               <p class="mini-label">Computer clue</p>
-              <h3 id="oneHintQuestion">What is the even prime number?</h3>
+              <h3 id="oneHintQuestion">Your clue is loading.</h3>
             </div>
             <button id="oneHintNewBtn" class="mini-ghost-btn" type="button">New Clue</button>
           </div>
           <form id="oneHintForm" class="one-hint-form" autocomplete="off">
             <label class="input-label" for="oneHintInput">Enter your answer</label>
-            <input id="oneHintInput" class="guess-input one-hint-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="2" />
+            <input id="oneHintInput" class="guess-input one-hint-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="Answer" />
             <div class="button-row">
               <button id="oneHintSubmitBtn" class="primary-btn" type="submit">Check Answer</button>
             </div>
@@ -500,7 +500,7 @@
     </section>
   </main>
 
-  <script type="module" src="./app.js?v=20260511-6"></script>
+  <script type="module" src="./app.js?v=20260511-7"></script>
 </body>
 </html>
 

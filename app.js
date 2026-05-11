@@ -212,6 +212,7 @@ let deferredInstallPrompt = null;
 let oneHintQuestionIndex = 0;
 let oneHintAttempts = 0;
 let oneHintSolved = false;
+let oneHintInitialized = false;
 
 init();
 
@@ -1366,12 +1367,43 @@ function getCurrentOneHintQuestion() {
   return ONE_HINT_QUESTIONS[oneHintQuestionIndex] || ONE_HINT_QUESTIONS[0];
 }
 
+function initializeOneHintQuestionForPlayer() {
+  if (oneHintInitialized) {
+    return true;
+  }
+
+  if (!currentUser || !currentUsername) {
+    return false;
+  }
+
+  const playerSeed = `${currentUser.uid}:${currentUsername}`;
+  oneHintQuestionIndex = hashString(`${playerSeed}:one-hint`) % ONE_HINT_QUESTIONS.length;
+  oneHintAttempts = 0;
+  oneHintSolved = false;
+  oneHintInitialized = true;
+  return true;
+}
+
 function renderOneHintQuestion() {
+  const hasPlayerQuestion = initializeOneHintQuestionForPlayer();
+  if (!hasPlayerQuestion) {
+    dom.oneHintQuestion.textContent = "Your clue is loading.";
+    dom.oneHintInput.value = "";
+    dom.oneHintInput.maxLength = "4";
+    dom.oneHintInput.placeholder = "Answer";
+    dom.oneHintFeedback.textContent = "Use the clue. This mode only says correct or wrong.";
+    dom.oneHintFeedback.className = "one-hint-feedback";
+    dom.oneHintAttemptBadge.textContent = "0 tries";
+    dom.oneHintInput.disabled = true;
+    dom.oneHintSubmitBtn.disabled = true;
+    return;
+  }
+
   const currentQuestion = getCurrentOneHintQuestion();
   dom.oneHintQuestion.textContent = currentQuestion.question;
   dom.oneHintInput.value = "";
   dom.oneHintInput.maxLength = String(Math.max(1, currentQuestion.answer.length));
-  dom.oneHintInput.placeholder = currentQuestion.answer;
+  dom.oneHintInput.placeholder = "Answer";
   dom.oneHintFeedback.textContent = "Use the clue. This mode only says correct or wrong.";
   dom.oneHintFeedback.className = "one-hint-feedback";
   dom.oneHintAttemptBadge.textContent = `${oneHintAttempts} ${oneHintAttempts === 1 ? "try" : "tries"}`;
@@ -1380,6 +1412,7 @@ function renderOneHintQuestion() {
 }
 
 function startNewOneHintQuestion() {
+  initializeOneHintQuestionForPlayer();
   oneHintQuestionIndex = (oneHintQuestionIndex + 1) % ONE_HINT_QUESTIONS.length;
   oneHintAttempts = 0;
   oneHintSolved = false;
