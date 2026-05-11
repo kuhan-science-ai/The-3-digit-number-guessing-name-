@@ -244,6 +244,18 @@ body::after {
   justify-content: center;
 }
 
+.game-picture {
+  display: block;
+  width: min(260px, 48vw);
+  aspect-ratio: 1;
+  margin: 0 auto 18px;
+  border-radius: 30px;
+  object-fit: cover;
+  box-shadow:
+    0 24px 56px rgba(0, 0, 0, 0.34),
+    0 0 0 1px rgba(56, 189, 248, 0.28);
+}
+
 .play-panel {
   display: none;
   grid-template-columns: minmax(280px, 0.95fr) minmax(320px, 1.05fr);
