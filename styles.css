@@ -221,6 +221,29 @@ body::after {
   border-right: none;
 }
 
+.story-panel > .kicker,
+.story-panel > h1,
+.story-panel > .lead {
+  text-align: center;
+}
+
+.story-panel > h1 {
+  max-width: 15ch;
+  margin-inline: auto;
+  font-size: clamp(3.4rem, 6vw, 6.5rem);
+  line-height: 0.95;
+}
+
+.story-panel > .lead {
+  max-width: 66ch;
+  margin-inline: auto;
+  font-size: clamp(1.08rem, 1.5vw, 1.35rem);
+}
+
+.story-panel > .story-badges {
+  justify-content: center;
+}
+
 .play-panel {
   display: none;
   grid-template-columns: minmax(280px, 0.95fr) minmax(320px, 1.05fr);
