@@ -256,7 +256,7 @@ body::after {
 }
 
 .game-right-column {
-  gap: 6px;
+  gap: 14px;
 }
 
 .story-panel::after,
@@ -917,8 +917,21 @@ body.focus-mode .play-panel {
   min-height: calc(100vh - 20px);
 }
 
+body.focus-mode .game-right-column {
+  display: flex;
+  flex-direction: column;
+}
+
+body.focus-mode .game-notes-panel {
+  order: 1;
+}
+
+body.focus-mode .tracker-panel {
+  order: 2;
+}
+
 body.focus-mode .status-panel {
-  order: -1;
+  order: 3;
 }
 
 .history-list {
@@ -1352,16 +1365,16 @@ body.focus-mode .status-panel {
     top: 28px;
   }
 
-  .game-left-column .guess-form {
-    order: 1;
-  }
-
-  .game-left-column .mode-panel {
+  .game-left-column > .panel-top {
     order: 2;
   }
 
-  .game-left-column .tracker-panel {
+  .game-left-column .guess-form {
     order: 3;
+  }
+
+  .game-left-column .mode-panel {
+    order: 1;
   }
 
   .game-left-column .settings-panel {
@@ -1369,25 +1382,19 @@ body.focus-mode .status-panel {
   }
 
   .game-right-column {
-    display: grid;
-    grid-template-columns: minmax(0, 0.92fr) minmax(300px, 0.8fr);
+    display: flex;
+    flex-direction: column;
     gap: 14px;
-    align-items: start;
-  }
-
-  .game-right-column > .status-panel {
-    grid-column: 1 / -1;
-  }
-
-  .game-right-column > .history-panel {
-    grid-column: 1;
-    grid-row: 2 / span 2;
-    min-height: 520px;
   }
 
   .game-right-column > .game-notes-panel,
-  .game-right-column > .leaderboard-panel {
-    grid-column: 2;
+  .game-right-column > .tracker-panel,
+  .game-right-column > .status-panel {
+    width: 100%;
+  }
+
+  .game-right-column > .history-panel {
+    min-height: 520px;
   }
 
   .number-pad {
@@ -1480,40 +1487,40 @@ body.focus-mode .status-panel {
     display: contents;
   }
 
-  .play-panel > .game-left-column > .panel-top {
-    order: 1;
-  }
-
-  .status-panel {
+  .mode-panel {
     order: 2;
   }
 
-  .guess-form {
+  .play-panel > .game-left-column > .panel-top {
     order: 3;
   }
 
-  .tracker-panel {
+  .guess-form {
     order: 4;
   }
 
-  .mode-panel {
+  .game-notes-panel {
     order: 5;
   }
 
-  .game-notes-panel {
+  .tracker-panel {
     order: 6;
   }
 
-  .history-panel {
+  .status-panel {
     order: 7;
   }
 
-  .leaderboard-panel {
+  .history-panel {
     order: 8;
   }
 
-  .settings-panel {
+  .leaderboard-panel {
     order: 9;
+  }
+
+  .settings-panel {
+    order: 10;
   }
 
   .guess-form,

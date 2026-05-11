@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css?v=20260511-2" />
+  <link rel="stylesheet" href="./styles.css?v=20260511-3" />
 </head>
 <body>
   <div class="ambient ambient-left" aria-hidden="true"></div>
@@ -280,27 +280,6 @@
             </div>
           </section>
 
-          <section class="tracker-panel">
-            <div class="tracker-top">
-              <div>
-                <p class="mini-label">Digit tracker · 🎯</p>
-                <h3>Cross out digits</h3>
-              </div>
-              <button id="clearTrackerBtn" class="mini-ghost-btn" type="button">Clear</button>
-            </div>
-            <div id="digitTracker" class="digit-tracker" aria-label="Digit elimination tracker">
-              <button type="button" class="digit-chip" data-digit="1">1</button>
-              <button type="button" class="digit-chip" data-digit="2">2</button>
-              <button type="button" class="digit-chip" data-digit="3">3</button>
-              <button type="button" class="digit-chip" data-digit="4">4</button>
-              <button type="button" class="digit-chip" data-digit="5">5</button>
-              <button type="button" class="digit-chip" data-digit="6">6</button>
-              <button type="button" class="digit-chip" data-digit="7">7</button>
-              <button type="button" class="digit-chip" data-digit="8">8</button>
-              <button type="button" class="digit-chip" data-digit="9">9</button>
-            </div>
-          </section>
-
           <form id="guessForm" class="guess-form" autocomplete="off">
             <div id="guessEmojiBurst" class="guess-emoji-burst" aria-hidden="true"></div>
             <label id="guessInputLabel" class="input-label" for="guessInput">Enter a 3-digit number from 1 to 9 with no repeated digits</label>
@@ -327,16 +306,6 @@
         </div>
 
         <div class="game-right-column">
-          <section class="status-panel">
-            <p class="mini-label">Live clue · 🔍</p>
-            <div id="emojiReaction" class="emoji-reaction" aria-live="polite">🎯 Steady start</div>
-            <p id="statusText" class="status-copy">A new secret number is ready. Enter your first guess.</p>
-            <div id="coachPanel" class="coach-panel" hidden>
-              <p class="mini-label">Beginner coach</p>
-              <p id="coachText">Turn on beginner coach in settings to see learning tips here.</p>
-            </div>
-          </section>
-
           <section class="notes-panel game-notes-panel">
           <div class="tracker-top">
             <div>
@@ -349,6 +318,37 @@
             class="notes-input"
             placeholder="Write the digits you want to test next and why..."
           ></textarea>
+          </section>
+
+          <section class="tracker-panel">
+            <div class="tracker-top">
+              <div>
+                <p class="mini-label">Digit tracker · 🎯</p>
+                <h3>Cross out digits</h3>
+              </div>
+              <button id="clearTrackerBtn" class="mini-ghost-btn" type="button">Clear</button>
+            </div>
+            <div id="digitTracker" class="digit-tracker" aria-label="Digit elimination tracker">
+              <button type="button" class="digit-chip" data-digit="1">1</button>
+              <button type="button" class="digit-chip" data-digit="2">2</button>
+              <button type="button" class="digit-chip" data-digit="3">3</button>
+              <button type="button" class="digit-chip" data-digit="4">4</button>
+              <button type="button" class="digit-chip" data-digit="5">5</button>
+              <button type="button" class="digit-chip" data-digit="6">6</button>
+              <button type="button" class="digit-chip" data-digit="7">7</button>
+              <button type="button" class="digit-chip" data-digit="8">8</button>
+              <button type="button" class="digit-chip" data-digit="9">9</button>
+            </div>
+          </section>
+
+          <section class="status-panel">
+            <p class="mini-label">Live clue · 🔍</p>
+            <div id="emojiReaction" class="emoji-reaction" aria-live="polite">🎯 Steady start</div>
+            <p id="statusText" class="status-copy">A new secret number is ready. Enter your first guess.</p>
+            <div id="coachPanel" class="coach-panel" hidden>
+              <p class="mini-label">Beginner coach</p>
+              <p id="coachText">Turn on beginner coach in settings to see learning tips here.</p>
+            </div>
           </section>
 
           <section class="history-panel">
@@ -397,7 +397,7 @@
     </section>
   </main>
 
-  <script type="module" src="./app.js?v=20260511-2"></script>
+  <script type="module" src="./app.js?v=20260511-3"></script>
 </body>
 </html>
 
