@@ -199,6 +199,20 @@ body::after {
   display: grid;
 }
 
+.story-panel.is-active,
+.challenge-tab-panel.is-active,
+.rankings-panel.is-active,
+.one-hint-panel.is-active {
+  align-content: center;
+  justify-items: center;
+  min-height: min(680px, calc(100vh - 190px));
+}
+
+.story-panel > *,
+.rankings-header {
+  width: min(960px, 100%);
+}
+
 .story-panel {
   background:
     radial-gradient(circle at top left, rgba(115, 240, 195, 0.12), transparent 28%),
@@ -219,6 +233,10 @@ body::after {
 
 .play-panel.is-active {
   display: grid;
+  grid-template-columns: minmax(280px, 460px) minmax(320px, 500px);
+  align-content: center;
+  justify-content: center;
+  min-height: min(680px, calc(100vh - 190px));
 }
 
 .rankings-panel,
@@ -246,9 +264,6 @@ body::after {
 }
 
 .one-hint-panel {
-  align-content: center;
-  justify-items: center;
-  min-height: min(680px, calc(100vh - 190px));
   background:
     radial-gradient(circle at 16% 16%, rgba(56, 189, 248, 0.14), transparent 24%),
     radial-gradient(circle at 88% 18%, rgba(34, 197, 94, 0.1), transparent 22%),
@@ -333,7 +348,7 @@ body::after {
 }
 
 .rankings-board {
-  width: min(860px, 100%);
+  width: min(960px, 100%);
 }
 
 .rankings-list {
@@ -357,7 +372,9 @@ body::after {
 
 .story-panel::after,
 .play-panel::after,
-.one-hint-panel::after {
+.one-hint-panel::after,
+.challenge-tab-panel::after,
+.rankings-panel::after {
   content: "";
   position: absolute;
   inset: 14px;
@@ -1720,6 +1737,15 @@ body.focus-mode .status-panel {
 
   .rankings-board {
     width: 100%;
+  }
+
+  .story-panel.is-active,
+  .challenge-tab-panel.is-active,
+  .rankings-panel.is-active,
+  .one-hint-panel.is-active,
+  .play-panel.is-active {
+    align-content: start;
+    min-height: auto;
   }
 
   .play-panel.is-active {
