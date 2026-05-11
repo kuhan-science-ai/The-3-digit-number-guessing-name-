@@ -75,11 +75,46 @@ const GAME_MODES = {
     timeLimitSeconds: 90,
   },
 };
+const ONE_HINT_QUESTIONS = [
+  {
+    question: "What is the even prime number?",
+    answer: "2",
+  },
+  {
+    question: "What number is the first square number after zero?",
+    answer: "1",
+  },
+  {
+    question: "What number is three squared?",
+    answer: "9",
+  },
+  {
+    question: "What number is half of 100?",
+    answer: "50",
+  },
+  {
+    question: "What number is the only single-digit cube greater than 1?",
+    answer: "8",
+  },
+  {
+    question: "What number is one dozen?",
+    answer: "12",
+  },
+  {
+    question: "What number is the smallest two-digit prime?",
+    answer: "11",
+  },
+  {
+    question: "What number is 7 plus 6?",
+    answer: "13",
+  },
+];
 
 const dom = {
   gamePageTabs: document.getElementById("gamePageTabs"),
   introTabPanel: document.getElementById("introTabPanel"),
   gameTabPanel: document.getElementById("gameTabPanel"),
+  oneHintTabPanel: document.getElementById("oneHintTabPanel"),
   challengeTabPanel: document.getElementById("challengeTabPanel"),
   rankingsTabPanel: document.getElementById("rankingsTabPanel"),
   focusModeBtn: document.getElementById("focusModeBtn"),
@@ -110,6 +145,13 @@ const dom = {
   challengeCurrentUsername: document.getElementById("challengeCurrentUsername"),
   challengeOpponentInput: document.getElementById("challengeOpponentInput"),
   challengeMeta: document.getElementById("challengeMeta"),
+  oneHintForm: document.getElementById("oneHintForm"),
+  oneHintQuestion: document.getElementById("oneHintQuestion"),
+  oneHintInput: document.getElementById("oneHintInput"),
+  oneHintSubmitBtn: document.getElementById("oneHintSubmitBtn"),
+  oneHintNewBtn: document.getElementById("oneHintNewBtn"),
+  oneHintFeedback: document.getElementById("oneHintFeedback"),
+  oneHintAttemptBadge: document.getElementById("oneHintAttemptBadge"),
   profileMenuBtn: document.getElementById("profileMenuBtn"),
   profileAvatar: document.getElementById("profileAvatar"),
   profileDropdown: document.getElementById("profileDropdown"),
@@ -167,6 +209,9 @@ let timerInterval = null;
 let solvedSummary = null;
 let settings = loadSettings();
 let deferredInstallPrompt = null;
+let oneHintQuestionIndex = 0;
+let oneHintAttempts = 0;
+let oneHintSolved = false;
 
 init();
 
@@ -189,6 +234,9 @@ function init() {
   dom.challengeFriendBtn.addEventListener("click", handleCreateChallenge);
   dom.copyChallengeBtn.addEventListener("click", handleCopyChallengeLink);
   dom.challengeOpponentInput.addEventListener("input", handleChallengeOpponentInput);
+  dom.oneHintForm.addEventListener("submit", handleOneHintSubmit);
+  dom.oneHintInput.addEventListener("input", handleOneHintInput);
+  dom.oneHintNewBtn.addEventListener("click", startNewOneHintQuestion);
   dom.shareResultBtn.addEventListener("click", handleShareResult);
   dom.celebrationCloseBtn.addEventListener("click", hideCelebration);
   dom.signOutBtn.addEventListener("click", handleSignOut);
@@ -218,6 +266,7 @@ function init() {
   updateSettingsUi();
   renderLeaderboard();
   updateChallengeUi();
+  renderOneHintQuestion();
   setGameLocked(true);
   updateTimerUi();
   registerServiceWorker();
@@ -240,7 +289,7 @@ function handleGamePageTabClick(event) {
 }
 
 function setActivePageTab(tabName) {
-  activePageTab = ["intro", "game", "challenge", "rankings"].includes(tabName) ? tabName : "intro";
+  activePageTab = ["intro", "game", "oneHint", "challenge", "rankings"].includes(tabName) ? tabName : "intro";
   dom.gamePageTabs.querySelectorAll("[data-tab]").forEach((button) => {
     const isActive = button.dataset.tab === activePageTab;
     button.classList.toggle("is-active", isActive);
@@ -249,11 +298,14 @@ function setActivePageTab(tabName) {
 
   dom.introTabPanel.classList.toggle("is-active", activePageTab === "intro");
   dom.gameTabPanel.classList.toggle("is-active", activePageTab === "game");
+  dom.oneHintTabPanel.classList.toggle("is-active", activePageTab === "oneHint");
   dom.challengeTabPanel.classList.toggle("is-active", activePageTab === "challenge");
   dom.rankingsTabPanel.classList.toggle("is-active", activePageTab === "rankings");
 
   if (activePageTab === "game") {
     dom.guessInput.focus();
+  } else if (activePageTab === "oneHint") {
+    dom.oneHintInput.focus();
   } else if (activePageTab === "challenge") {
     dom.challengeOpponentInput.focus();
   } else if (activePageTab === "rankings") {
@@ -1310,6 +1362,72 @@ function handleChallengeOpponentInput() {
   saveGameState();
 }
 
+function getCurrentOneHintQuestion() {
+  return ONE_HINT_QUESTIONS[oneHintQuestionIndex] || ONE_HINT_QUESTIONS[0];
+}
+
+function renderOneHintQuestion() {
+  const currentQuestion = getCurrentOneHintQuestion();
+  dom.oneHintQuestion.textContent = currentQuestion.question;
+  dom.oneHintInput.value = "";
+  dom.oneHintInput.maxLength = String(Math.max(1, currentQuestion.answer.length));
+  dom.oneHintInput.placeholder = currentQuestion.answer;
+  dom.oneHintFeedback.textContent = "Use the clue. This mode only says correct or wrong.";
+  dom.oneHintFeedback.className = "one-hint-feedback";
+  dom.oneHintAttemptBadge.textContent = `${oneHintAttempts} ${oneHintAttempts === 1 ? "try" : "tries"}`;
+  dom.oneHintInput.disabled = oneHintSolved || !currentUser || !currentUsername;
+  dom.oneHintSubmitBtn.disabled = oneHintSolved || !currentUser || !currentUsername;
+}
+
+function startNewOneHintQuestion() {
+  oneHintQuestionIndex = (oneHintQuestionIndex + 1) % ONE_HINT_QUESTIONS.length;
+  oneHintAttempts = 0;
+  oneHintSolved = false;
+  renderOneHintQuestion();
+  dom.oneHintInput.focus();
+}
+
+function handleOneHintInput() {
+  const sanitized = String(dom.oneHintInput.value || "").replace(/\D/g, "").slice(0, dom.oneHintInput.maxLength);
+  if (dom.oneHintInput.value !== sanitized) {
+    dom.oneHintInput.value = sanitized;
+  }
+}
+
+function handleOneHintSubmit(event) {
+  event.preventDefault();
+
+  if (oneHintSolved) {
+    return;
+  }
+
+  const answer = getCurrentOneHintQuestion().answer;
+  const guess = dom.oneHintInput.value.trim();
+  if (!guess) {
+    dom.oneHintFeedback.textContent = "Try again.";
+    dom.oneHintFeedback.className = "one-hint-feedback is-wrong";
+    dom.oneHintInput.focus();
+    return;
+  }
+
+  oneHintAttempts += 1;
+  dom.oneHintAttemptBadge.textContent = `${oneHintAttempts} ${oneHintAttempts === 1 ? "try" : "tries"}`;
+
+  if (guess === answer) {
+    oneHintSolved = true;
+    dom.oneHintFeedback.textContent = "Correct.";
+    dom.oneHintFeedback.className = "one-hint-feedback is-correct";
+    dom.oneHintInput.disabled = true;
+    dom.oneHintSubmitBtn.disabled = true;
+    return;
+  }
+
+  dom.oneHintFeedback.textContent = "Wrong. Try again.";
+  dom.oneHintFeedback.className = "one-hint-feedback is-wrong";
+  dom.oneHintInput.value = "";
+  dom.oneHintInput.focus();
+}
+
 function handleCreateChallenge() {
   if (isGuestPlayer) {
     setStatus("Sign in with Google to create named friend challenges.", "status-hint");
@@ -1936,6 +2054,9 @@ function setGameLocked(locked) {
   dom.guessInput.disabled = locked;
   dom.guessButton.disabled = locked;
   dom.newGameBtn.disabled = locked;
+  dom.oneHintInput.disabled = locked || oneHintSolved;
+  dom.oneHintSubmitBtn.disabled = locked || oneHintSolved;
+  dom.oneHintNewBtn.disabled = locked;
   dom.dailyChallengeBtn.disabled = locked;
   dom.modeTabs.querySelectorAll(".mode-tab").forEach((button) => {
     button.disabled = locked;
@@ -1950,6 +2071,7 @@ function setGameLocked(locked) {
   }
 
   updateModeUi();
+  renderOneHintQuestion();
   if (locked) {
     dom.dailyChallengeBtn.disabled = true;
   }

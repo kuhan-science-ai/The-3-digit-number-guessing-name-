@@ -143,6 +143,7 @@ body::after {
 .game-header,
 .story-panel,
 .play-panel,
+.one-hint-panel,
 .challenge-tab-panel,
 .rankings-panel {
   position: relative;
@@ -164,7 +165,7 @@ body::after {
 
 .game-page-tabs {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px;
   padding: 14px;
   background: rgba(5, 10, 20, 0.34);
@@ -220,7 +221,8 @@ body::after {
   display: grid;
 }
 
-.rankings-panel {
+.rankings-panel,
+.one-hint-panel {
   display: none;
   gap: 18px;
 }
@@ -239,15 +241,66 @@ body::after {
   display: grid;
 }
 
-.challenge-tab-header {
+.one-hint-panel.is-active {
+  display: grid;
+}
+
+.one-hint-panel {
+  background:
+    radial-gradient(circle at 16% 16%, rgba(56, 189, 248, 0.14), transparent 24%),
+    radial-gradient(circle at 88% 18%, rgba(34, 197, 94, 0.1), transparent 22%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
+    rgba(8, 14, 28, 0.34);
+}
+
+.challenge-tab-header,
+.one-hint-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 18px;
 }
 
-.challenge-tab-card {
+.challenge-tab-card,
+.one-hint-card {
   width: min(760px, 100%);
+}
+
+.one-hint-card {
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)),
+    var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.one-hint-form {
+  display: grid;
+  gap: 12px;
+}
+
+.one-hint-input {
+  max-width: 260px;
+}
+
+.one-hint-feedback {
+  min-height: 30px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.08rem;
+  font-weight: 800;
+}
+
+.one-hint-feedback.is-correct {
+  color: var(--mint);
+}
+
+.one-hint-feedback.is-wrong {
+  color: var(--rose);
 }
 
 .rankings-panel.is-active {
@@ -285,7 +338,8 @@ body::after {
 }
 
 .story-panel::after,
-.play-panel::after {
+.play-panel::after,
+.one-hint-panel::after {
   content: "";
   position: absolute;
   inset: 14px;
@@ -1581,6 +1635,7 @@ body.focus-mode .status-panel {
   .game-header,
   .story-panel,
   .play-panel,
+  .one-hint-panel,
   .challenge-tab-panel,
   .rankings-panel {
     padding: 18px 14px;
@@ -1616,12 +1671,14 @@ body.focus-mode .status-panel {
     align-items: stretch;
   }
 
-  .challenge-tab-header {
+  .challenge-tab-header,
+  .one-hint-header {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .challenge-tab-card {
+  .challenge-tab-card,
+  .one-hint-card {
     width: 100%;
   }
 

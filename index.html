@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css?v=20260511-5" />
+  <link rel="stylesheet" href="./styles.css?v=20260511-6" />
 </head>
 <body>
   <div class="ambient ambient-left" aria-hidden="true"></div>
@@ -133,6 +133,7 @@
       <nav id="gamePageTabs" class="game-page-tabs" aria-label="Game sections">
         <button class="game-page-tab is-active" type="button" data-tab="intro">Intro & Rules</button>
         <button class="game-page-tab" type="button" data-tab="game">Hardcore Game</button>
+        <button class="game-page-tab" type="button" data-tab="oneHint">One Hint</button>
         <button class="game-page-tab" type="button" data-tab="challenge">Challenge</button>
         <button class="game-page-tab" type="button" data-tab="rankings">Rankings</button>
       </nav>
@@ -440,6 +441,34 @@
         </div>
       </section>
 
+      <section id="oneHintTabPanel" class="one-hint-panel tab-panel">
+        <div class="one-hint-header">
+          <div>
+            <p class="mini-label">One hint mode</p>
+            <h2>Guess from one clue</h2>
+          </div>
+          <span id="oneHintAttemptBadge" class="attempt-badge">0 tries</span>
+        </div>
+
+        <section class="one-hint-card">
+          <div class="tracker-top">
+            <div>
+              <p class="mini-label">Computer clue</p>
+              <h3 id="oneHintQuestion">What is the even prime number?</h3>
+            </div>
+            <button id="oneHintNewBtn" class="mini-ghost-btn" type="button">New Clue</button>
+          </div>
+          <form id="oneHintForm" class="one-hint-form" autocomplete="off">
+            <label class="input-label" for="oneHintInput">Enter your answer</label>
+            <input id="oneHintInput" class="guess-input one-hint-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="2" />
+            <div class="button-row">
+              <button id="oneHintSubmitBtn" class="primary-btn" type="submit">Check Answer</button>
+            </div>
+          </form>
+          <p id="oneHintFeedback" class="one-hint-feedback" aria-live="polite">Use the clue. This mode only says correct or wrong.</p>
+        </section>
+      </section>
+
       <section id="rankingsTabPanel" class="rankings-panel tab-panel">
         <div class="rankings-header">
           <div>
@@ -471,7 +500,7 @@
     </section>
   </main>
 
-  <script type="module" src="./app.js?v=20260511-5"></script>
+  <script type="module" src="./app.js?v=20260511-6"></script>
 </body>
 </html>
 
