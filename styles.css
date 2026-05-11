@@ -99,6 +99,14 @@ body::after {
     rgba(8, 14, 28, 0.34);
 }
 
+.rankings-panel {
+  background:
+    radial-gradient(circle at 18% 18%, rgba(88, 230, 177, 0.12), transparent 24%),
+    radial-gradient(circle at 86% 20%, rgba(177, 140, 255, 0.14), transparent 22%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
+    rgba(8, 14, 28, 0.34);
+}
+
 .story-panel {
   background:
     radial-gradient(circle at top left, rgba(177, 140, 255, 0.16), transparent 26%),
@@ -135,7 +143,8 @@ body::after {
 
 .game-header,
 .story-panel,
-.play-panel {
+.play-panel,
+.rankings-panel {
   position: relative;
   padding: 34px;
 }
@@ -155,7 +164,7 @@ body::after {
 
 .game-page-tabs {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   padding: 14px;
   background: rgba(5, 10, 20, 0.34);
@@ -209,6 +218,30 @@ body::after {
 
 .play-panel.is-active {
   display: grid;
+}
+
+.rankings-panel {
+  display: none;
+  gap: 18px;
+}
+
+.rankings-panel.is-active {
+  display: grid;
+}
+
+.rankings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.rankings-board {
+  width: min(860px, 100%);
+}
+
+.rankings-list {
+  max-height: none;
 }
 
 .game-left-column,
@@ -382,6 +415,7 @@ h3 {
 .mode-panel,
 .settings-panel,
 .leaderboard-panel,
+.rankings-board,
 .challenge-panel,
 .notes-panel,
 .history-panel,
@@ -420,6 +454,7 @@ h3 {
 .mode-panel,
 .settings-panel,
 .leaderboard-panel,
+.rankings-board,
 .challenge-panel,
 .notes-panel,
 .history-panel {
@@ -1394,7 +1429,8 @@ body.focus-mode .status-panel {
 
   .game-header,
   .story-panel,
-  .play-panel {
+  .play-panel,
+  .rankings-panel {
     padding: 18px 14px;
   }
 
@@ -1411,7 +1447,7 @@ body.focus-mode .status-panel {
   }
 
   .game-page-tabs {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     padding: 10px 12px;
     background: rgba(5, 10, 20, 0.88);
     backdrop-filter: blur(16px);
@@ -1420,7 +1456,16 @@ body.focus-mode .status-panel {
   .game-page-tab {
     min-height: 44px;
     border-radius: 12px;
-    font-size: 0.9rem;
+    font-size: 0.82rem;
+  }
+
+  .rankings-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .rankings-board {
+    width: 100%;
   }
 
   .play-panel.is-active {
@@ -1477,6 +1522,7 @@ body.focus-mode .status-panel {
   .mode-panel,
   .settings-panel,
   .leaderboard-panel,
+  .rankings-board,
   .notes-panel,
   .history-panel {
     padding: 14px;

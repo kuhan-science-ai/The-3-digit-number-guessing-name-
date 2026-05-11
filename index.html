@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css?v=20260511-1" />
+  <link rel="stylesheet" href="./styles.css?v=20260511-2" />
 </head>
 <body>
   <div class="ambient ambient-left" aria-hidden="true"></div>
@@ -133,6 +133,7 @@
       <nav id="gamePageTabs" class="game-page-tabs" aria-label="Game sections">
         <button class="game-page-tab is-active" type="button" data-tab="intro">Intro & Rules</button>
         <button class="game-page-tab" type="button" data-tab="game">Hardcore Game</button>
+        <button class="game-page-tab" type="button" data-tab="rankings">Rankings</button>
       </nav>
 
       <aside id="introTabPanel" class="story-panel tab-panel is-active">
@@ -350,25 +351,6 @@
           ></textarea>
           </section>
 
-          <section class="leaderboard-panel">
-          <div class="history-top">
-            <div>
-              <p class="mini-label">Top scores</p>
-              <h3>Local leaderboard</h3>
-            </div>
-          </div>
-          <div id="leaderboardTabs" class="leaderboard-tabs" aria-label="Leaderboard board">
-            <button type="button" class="mode-tab is-active" data-board="classic">Classic</button>
-            <button type="button" class="mode-tab" data-board="easy">Easy</button>
-            <button type="button" class="mode-tab" data-board="hard">Hard</button>
-            <button type="button" class="mode-tab" data-board="time">Time</button>
-            <button type="button" class="mode-tab" data-board="daily">Daily</button>
-          </div>
-          <div id="leaderboardList" class="leaderboard-list">
-            <p class="empty-state">Finish a puzzle to record your first score.</p>
-          </div>
-          </section>
-
           <section class="history-panel">
           <div class="history-top">
             <div>
@@ -383,10 +365,39 @@
           </section>
         </div>
       </section>
+
+      <section id="rankingsTabPanel" class="rankings-panel tab-panel">
+        <div class="rankings-header">
+          <div>
+            <p class="mini-label">Rankings · 🏆</p>
+            <h2>All score boards</h2>
+          </div>
+          <span id="rankingsTodayBadge" class="attempt-badge">Local scores</span>
+        </div>
+
+        <section class="leaderboard-panel rankings-board">
+          <div class="history-top">
+            <div>
+              <p class="mini-label">Top scores</p>
+              <h3>Local leaderboard</h3>
+            </div>
+          </div>
+          <div id="leaderboardTabs" class="leaderboard-tabs" aria-label="Leaderboard board">
+            <button type="button" class="mode-tab is-active" data-board="classic">Classic</button>
+            <button type="button" class="mode-tab" data-board="easy">Easy</button>
+            <button type="button" class="mode-tab" data-board="hard">Hard</button>
+            <button type="button" class="mode-tab" data-board="time">Time</button>
+            <button type="button" class="mode-tab" data-board="daily">Daily</button>
+          </div>
+          <div id="leaderboardList" class="leaderboard-list rankings-list">
+            <p class="empty-state">Finish a puzzle to record your first score.</p>
+          </div>
+        </section>
+      </section>
     </section>
   </main>
 
-  <script type="module" src="./app.js?v=20260511-1"></script>
+  <script type="module" src="./app.js?v=20260511-2"></script>
 </body>
 </html>
 
