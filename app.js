@@ -26,6 +26,7 @@ const DAILY_ATTEMPT_STORAGE_PREFIX = "number-guessing-game-daily-attempt-v1";
 const SETTINGS_STORAGE_KEY = "number-guessing-game-settings-v1";
 const STREAK_STORAGE_KEY = "number-guessing-game-daily-streak-v1";
 const TUTORIAL_STORAGE_KEY = "number-guessing-game-tutorial-seen-v1";
+const ONE_HINT_PROGRESS_STORAGE_PREFIX = "number-guessing-game-one-hint-progress-v1";
 const CHALLENGE_PARAM = "challenge";
 const CHALLENGE_FROM_PARAM = "from";
 const CHALLENGE_TO_PARAM = "to";
@@ -78,53 +79,23 @@ const GAME_MODES = {
 const ONE_HINT_DIFFICULTIES = {
   easy: {
     label: "Easy",
-    questions: [
-      { question: "What is the only even prime number?", answer: "2" },
-      { question: "What number is three squared?", answer: "9" },
-      { question: "What number is half of 100?", answer: "50" },
-      { question: "What number is one dozen?", answer: "12" },
-      { question: "What number is the smallest two-digit prime?", answer: "11" },
-    ],
+    buildQuestion: buildEasyOneHintQuestion,
   },
   medium: {
     label: "Medium",
-    questions: [
-      { question: "What is the 10th Fibonacci number if the sequence starts 1, 1?", answer: "55" },
-      { question: "What is the smallest positive integer with exactly 12 positive divisors?", answer: "60" },
-      { question: "What is 12 squared minus 5 squared?", answer: "119" },
-      { question: "What is the least common multiple of 8, 9, and 12?", answer: "72" },
-      { question: "What is the sum of the first 15 positive integers?", answer: "120" },
-    ],
+    buildQuestion: buildMediumOneHintQuestion,
   },
   expert: {
     label: "Expert",
-    questions: [
-      { question: "What is 17 squared?", answer: "289" },
-      { question: "What is the 12th triangular number?", answer: "78" },
-      { question: "What is the least positive number divisible by every integer from 1 through 10?", answer: "2520" },
-      { question: "What is Euler's totient of 36?", answer: "12" },
-      { question: "What is 9 factorial divided by 7 factorial?", answer: "72" },
-    ],
+    buildQuestion: buildExpertOneHintQuestion,
   },
   insane: {
     label: "Insane",
-    questions: [
-      { question: "What is the smallest Carmichael number?", answer: "561" },
-      { question: "What is 2 to the 10th power plus 3 to the 5th power?", answer: "1267" },
-      { question: "What is the product of the first five prime numbers?", answer: "2310" },
-      { question: "What is 13 cubed minus 11 cubed?", answer: "866" },
-      { question: "What is the number of derangements of 6 objects?", answer: "265" },
-    ],
+    buildQuestion: buildInsaneOneHintQuestion,
   },
   impossible: {
     label: "Impossible",
-    questions: [
-      { question: "What is the first non-trivial taxicab number?", answer: "1729" },
-      { question: "What is the 10th Catalan number?", answer: "16796" },
-      { question: "What is the Kaprekar constant for four-digit numbers?", answer: "6174" },
-      { question: "What is the smallest Dudeney number greater than 1?", answer: "512" },
-      { question: "What is the smallest number expressible as the sum of two positive cubes in two different ways?", answer: "1729" },
-    ],
+    buildQuestion: buildImpossibleOneHintQuestion,
   },
 };
 
@@ -230,6 +201,7 @@ let settings = loadSettings();
 let deferredInstallPrompt = null;
 let currentOneHintDifficulty = "easy";
 let oneHintQuestionIndex = 0;
+let currentOneHintQuestion = null;
 let oneHintAttempts = 0;
 let oneHintSolved = false;
 let oneHintInitialized = false;
@@ -710,6 +682,220 @@ function seededRandom(seed) {
     state = Math.imul(1664525, state) + 1013904223;
     return (state >>> 0) / 4294967296;
   };
+}
+
+function buildEasyOneHintQuestion(index) {
+  const variant = index % 5;
+  const step = Math.floor(index / 5);
+  if (variant === 0) {
+    const base = 4 + step;
+    return { question: `What is ${base} squared?`, answer: String(base * base) };
+  }
+  if (variant === 1) {
+    const a = 12 + (step * 3);
+    const b = 6 + (step * 2);
+    return { question: `What is ${a} plus ${b}?`, answer: String(a + b) };
+  }
+  if (variant === 2) {
+    const a = 6 + step;
+    const b = 4 + (step % 9);
+    return { question: `What is ${a} times ${b}?`, answer: String(a * b) };
+  }
+  if (variant === 3) {
+    const n = 8 + step;
+    return { question: `What is the ${n}th even number?`, answer: String(n * 2) };
+  }
+  const answer = 20 + (step * 4);
+  const multiplier = 2 + (step % 5);
+  return { question: `What number multiplied by ${multiplier} gives ${answer * multiplier}?`, answer: String(answer) };
+}
+
+function buildMediumOneHintQuestion(index) {
+  const variant = index % 5;
+  const step = Math.floor(index / 5);
+  if (variant === 0) {
+    const n = 12 + step;
+    return { question: `What is the ${n}th triangular number?`, answer: String((n * (n + 1)) / 2) };
+  }
+  if (variant === 1) {
+    const a = 11 + step;
+    const b = 3 + (step % 7);
+    return { question: `What is ${a} squared minus ${b} squared?`, answer: String((a * a) - (b * b)) };
+  }
+  if (variant === 2) {
+    const a = 5 + step;
+    const b = 7 + (step % 11);
+    return { question: `What is the least common multiple of ${a} and ${b}?`, answer: String(lcm(a, b)) };
+  }
+  if (variant === 3) {
+    const n = 7 + step;
+    return { question: `What is ${n} factorial divided by ${n - 2} factorial?`, answer: String(n * (n - 1)) };
+  }
+  const a = 18 + (step * 2);
+  const b = 4 + step;
+  const c = 3 + (step % 10);
+  return { question: `What is ${a} plus ${b} times ${c}?`, answer: String(a + (b * c)) };
+}
+
+function buildExpertOneHintQuestion(index) {
+  const variant = index % 5;
+  const step = Math.floor(index / 5);
+  if (variant === 0) {
+    const n = 18 + step;
+    return { question: `What is Euler's totient of ${n}?`, answer: String(totient(n)) };
+  }
+  if (variant === 1) {
+    const a = 13 + step;
+    const b = 7 + (step % 11);
+    return { question: `What is ${a} cubed minus ${b} cubed?`, answer: String((a ** 3) - (b ** 3)) };
+  }
+  if (variant === 2) {
+    const a = 6 + step;
+    const b = 8 + (step % 13);
+    const c = 10 + (step % 17);
+    return { question: `What is the least common multiple of ${a}, ${b}, and ${c}?`, answer: String(lcm(lcm(a, b), c)) };
+  }
+  if (variant === 3) {
+    const n = 5 + step;
+    return { question: `How many derangements are there of ${n} objects?`, answer: String(derangements(n)) };
+  }
+  const n = 15 + step;
+  return { question: `What is the ${n}th Fibonacci number if the sequence starts 1, 1?`, answer: String(fibonacci(n)) };
+}
+
+function buildInsaneOneHintQuestion(index) {
+  const variant = index % 5;
+  const step = Math.floor(index / 5);
+  if (variant === 0) {
+    const base = 7 + step;
+    const exponent = 4 + (step % 5);
+    const modulus = 23 + (step * 2);
+    return { question: `What is the remainder when ${base} to the ${exponent} power is divided by ${modulus}?`, answer: String(modPow(base, exponent, modulus)) };
+  }
+  if (variant === 1) {
+    const a = 40 + (step * 3);
+    const b = 30 + (step * 2);
+    return { question: `What is ${a} times ${b} minus their greatest common divisor?`, answer: String((a * b) - gcd(a, b)) };
+  }
+  if (variant === 2) {
+    const n = 6 + step;
+    return { question: `What is ${n} factorial divided by ${n - 3} factorial?`, answer: String(n * (n - 1) * (n - 2)) };
+  }
+  if (variant === 3) {
+    const n = 4 + step;
+    return { question: `What is the ${n}th Catalan number?`, answer: String(catalan(n)) };
+  }
+  const a = 18 + step;
+  const b = 12 + (step % 17);
+  return { question: `What is ${a} squared plus ${b} cubed?`, answer: String((a * a) + (b ** 3)) };
+}
+
+function buildImpossibleOneHintQuestion(index) {
+  const variant = index % 5;
+  const step = Math.floor(index / 5);
+  if (variant === 0) {
+    const n = 9 + step;
+    return { question: `What is the ${n}th Catalan number?`, answer: String(catalan(n)) };
+  }
+  if (variant === 1) {
+    const a = 12 + step;
+    const b = 10 + (step % 19);
+    const c = 7 + (step % 14);
+    return { question: `What is ${a} to the 4th power minus ${b} cubed plus ${c} squared?`, answer: String((a ** 4) - (b ** 3) + (c * c)) };
+  }
+  if (variant === 2) {
+    const n = 25 + step;
+    return { question: `What is Euler's totient of ${n} squared?`, answer: String(totient(n * n)) };
+  }
+  if (variant === 3) {
+    const n = 7 + step;
+    return { question: `How many derangements are there of ${n} objects?`, answer: String(derangements(n)) };
+  }
+  const a = 19 + step;
+  const b = 11 + (step % 13);
+  const m = 101 + (step * 6);
+  return { question: `What is the remainder when ${a} to the ${b} power is divided by ${m}?`, answer: String(modPow(a, b, m)) };
+}
+
+function gcd(a, b) {
+  let left = Math.abs(a);
+  let right = Math.abs(b);
+  while (right) {
+    const next = left % right;
+    left = right;
+    right = next;
+  }
+  return left;
+}
+
+function lcm(a, b) {
+  return Math.abs(a * b) / gcd(a, b);
+}
+
+function fibonacci(n) {
+  let previous = 1n;
+  let current = 1n;
+  for (let index = 3; index <= n; index += 1) {
+    const next = previous + current;
+    previous = current;
+    current = next;
+  }
+  return current;
+}
+
+function factorial(n) {
+  let result = 1n;
+  for (let value = 2; value <= n; value += 1) {
+    result *= BigInt(value);
+  }
+  return result;
+}
+
+function catalan(n) {
+  return factorial(2 * n) / (factorial(n + 1) * factorial(n));
+}
+
+function derangements(n) {
+  let previous = 1n;
+  let current = 0n;
+  for (let value = 2; value <= n; value += 1) {
+    const next = BigInt(value - 1) * (current + previous);
+    previous = current;
+    current = next;
+  }
+  return current;
+}
+
+function totient(n) {
+  let result = n;
+  let remainder = n;
+  for (let factor = 2; factor * factor <= remainder; factor += 1) {
+    if (remainder % factor !== 0) {
+      continue;
+    }
+    while (remainder % factor === 0) {
+      remainder /= factor;
+    }
+    result -= result / factor;
+  }
+  if (remainder > 1) {
+    result -= result / remainder;
+  }
+  return result;
+}
+
+function modPow(base, exponent, modulus) {
+  let result = 1;
+  let current = base % modulus;
+  let power = exponent;
+  while (power > 0) {
+    if (power % 2 === 1) {
+      result = (result * current) % modulus;
+    }
+    current = (current * current) % modulus;
+    power = Math.floor(power / 2);
+  }
+  return result;
 }
 
 function stopTimer() {
@@ -1388,13 +1574,37 @@ function getOneHintDifficultyConfig() {
   return ONE_HINT_DIFFICULTIES[currentOneHintDifficulty] || ONE_HINT_DIFFICULTIES.easy;
 }
 
-function getOneHintQuestions() {
-  return getOneHintDifficultyConfig().questions;
+function getOneHintProgressKey(difficulty = currentOneHintDifficulty) {
+  const playerId = currentUser?.uid || GUEST_UID;
+  const playerName = currentUsername || "player";
+  return `${ONE_HINT_PROGRESS_STORAGE_PREFIX}:${playerId}:${playerName}:${difficulty}`;
+}
+
+function getInitialOneHintQuestionIndex(difficulty = currentOneHintDifficulty) {
+  const playerSeed = `${currentUser?.uid || GUEST_UID}:${currentUsername || "player"}`;
+  return hashString(`${playerSeed}:one-hint:${difficulty}`) % 20;
+}
+
+function loadOneHintQuestionIndex(difficulty = currentOneHintDifficulty) {
+  try {
+    const saved = Number(localStorage.getItem(getOneHintProgressKey(difficulty)));
+    return Number.isSafeInteger(saved) && saved >= 0 ? saved : getInitialOneHintQuestionIndex(difficulty);
+  } catch {
+    return getInitialOneHintQuestionIndex(difficulty);
+  }
+}
+
+function saveOneHintQuestionIndex(difficulty = currentOneHintDifficulty, index = oneHintQuestionIndex) {
+  try {
+    localStorage.setItem(getOneHintProgressKey(difficulty), String(index));
+  } catch {
+    // One Hint can still generate fresh clues if storage is unavailable.
+  }
 }
 
 function getCurrentOneHintQuestion() {
-  const questions = getOneHintQuestions();
-  return questions[oneHintQuestionIndex] || questions[0];
+  const config = getOneHintDifficultyConfig();
+  return currentOneHintQuestion || config.buildQuestion(oneHintQuestionIndex);
 }
 
 function initializeOneHintQuestionForPlayer() {
@@ -1406,8 +1616,8 @@ function initializeOneHintQuestionForPlayer() {
     return false;
   }
 
-  const playerSeed = `${currentUser.uid}:${currentUsername}`;
-  oneHintQuestionIndex = hashString(`${playerSeed}:one-hint:${currentOneHintDifficulty}`) % getOneHintQuestions().length;
+  oneHintQuestionIndex = loadOneHintQuestionIndex(currentOneHintDifficulty);
+  currentOneHintQuestion = getOneHintDifficultyConfig().buildQuestion(oneHintQuestionIndex);
   oneHintAttempts = 0;
   oneHintSolved = false;
   oneHintInitialized = true;
@@ -1449,7 +1659,9 @@ function renderOneHintQuestion() {
 
 function startNewOneHintQuestion() {
   initializeOneHintQuestionForPlayer();
-  oneHintQuestionIndex = (oneHintQuestionIndex + 1) % getOneHintQuestions().length;
+  oneHintQuestionIndex += 1;
+  currentOneHintQuestion = getOneHintDifficultyConfig().buildQuestion(oneHintQuestionIndex);
+  saveOneHintQuestionIndex(currentOneHintDifficulty, oneHintQuestionIndex);
   oneHintAttempts = 0;
   oneHintSolved = false;
   renderOneHintQuestion();
@@ -1468,6 +1680,7 @@ function handleOneHintModeClick(event) {
 
   currentOneHintDifficulty = target.dataset.oneHintMode;
   oneHintInitialized = false;
+  currentOneHintQuestion = null;
   oneHintAttempts = 0;
   oneHintSolved = false;
   renderOneHintQuestion();
