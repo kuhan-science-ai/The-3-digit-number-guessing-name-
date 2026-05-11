@@ -470,8 +470,10 @@
             <input id="oneHintInput" class="guess-input one-hint-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="Answer" />
             <div class="button-row">
               <button id="oneHintSubmitBtn" class="primary-btn" type="submit">Check Answer</button>
+              <button id="oneHintFormulaBtn" class="ghost-btn one-hint-formula-btn" type="button" hidden>Formula Hint</button>
             </div>
           </form>
+          <p id="oneHintFormulaHint" class="one-hint-formula-hint" hidden></p>
           <p id="oneHintFeedback" class="one-hint-feedback" aria-live="polite">Use the clue. This mode only says correct or wrong.</p>
         </section>
       </section>

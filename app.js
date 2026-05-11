@@ -140,6 +140,8 @@ const dom = {
   oneHintInput: document.getElementById("oneHintInput"),
   oneHintSubmitBtn: document.getElementById("oneHintSubmitBtn"),
   oneHintNewBtn: document.getElementById("oneHintNewBtn"),
+  oneHintFormulaBtn: document.getElementById("oneHintFormulaBtn"),
+  oneHintFormulaHint: document.getElementById("oneHintFormulaHint"),
   oneHintFeedback: document.getElementById("oneHintFeedback"),
   oneHintAttemptBadge: document.getElementById("oneHintAttemptBadge"),
   profileMenuBtn: document.getElementById("profileMenuBtn"),
@@ -231,6 +233,7 @@ function init() {
   dom.oneHintForm.addEventListener("submit", handleOneHintSubmit);
   dom.oneHintInput.addEventListener("input", handleOneHintInput);
   dom.oneHintNewBtn.addEventListener("click", startNewOneHintQuestion);
+  dom.oneHintFormulaBtn.addEventListener("click", showOneHintFormulaHint);
   dom.shareResultBtn.addEventListener("click", handleShareResult);
   dom.celebrationCloseBtn.addEventListener("click", hideCelebration);
   dom.signOutBtn.addEventListener("click", handleSignOut);
@@ -770,24 +773,44 @@ function buildInsaneOneHintQuestion(index) {
     const base = 7 + step;
     const exponent = 4 + (step % 5);
     const modulus = 23 + (step * 2);
-    return { question: `What is the remainder when ${base} to the ${exponent} power is divided by ${modulus}?`, answer: String(modPow(base, exponent, modulus)) };
+    return {
+      question: `What is the remainder when ${base} to the ${exponent} power is divided by ${modulus}?`,
+      answer: String(modPow(base, exponent, modulus)),
+      formulaHint: `Use modular exponentiation: keep reducing after each multiplication, so (${base}^${exponent}) mod ${modulus} never needs the full power.`,
+    };
   }
   if (variant === 1) {
     const a = 40 + (step * 3);
     const b = 30 + (step * 2);
-    return { question: `What is ${a} times ${b} minus their greatest common divisor?`, answer: String((a * b) - gcd(a, b)) };
+    return {
+      question: `What is ${a} times ${b} minus their greatest common divisor?`,
+      answer: String((a * b) - gcd(a, b)),
+      formulaHint: `Calculate (${a} x ${b}) - gcd(${a}, ${b}). Find the gcd with Euclid's rule: gcd(a, b) = gcd(b, a mod b).`,
+    };
   }
   if (variant === 2) {
     const n = 6 + step;
-    return { question: `What is ${n} factorial divided by ${n - 3} factorial?`, answer: String(n * (n - 1) * (n - 2)) };
+    return {
+      question: `What is ${n} factorial divided by ${n - 3} factorial?`,
+      answer: String(n * (n - 1) * (n - 2)),
+      formulaHint: `${n}! / ${n - 3}! cancels down to ${n} x ${n - 1} x ${n - 2}.`,
+    };
   }
   if (variant === 3) {
     const n = 4 + step;
-    return { question: `What is the ${n}th Catalan number?`, answer: String(catalan(n)) };
+    return {
+      question: `What is the ${n}th Catalan number?`,
+      answer: String(catalan(n)),
+      formulaHint: `Use C_n = (2n)! / ((n + 1)! x n!). Here n = ${n}.`,
+    };
   }
   const a = 18 + step;
   const b = 12 + (step % 17);
-  return { question: `What is ${a} squared plus ${b} cubed?`, answer: String((a * a) + (b ** 3)) };
+  return {
+    question: `What is ${a} squared plus ${b} cubed?`,
+    answer: String((a * a) + (b ** 3)),
+    formulaHint: `Calculate ${a}^2 + ${b}^3, so (${a} x ${a}) + (${b} x ${b} x ${b}).`,
+  };
 }
 
 function buildImpossibleOneHintQuestion(index) {
@@ -795,26 +818,46 @@ function buildImpossibleOneHintQuestion(index) {
   const step = Math.floor(index / 5);
   if (variant === 0) {
     const n = 9 + step;
-    return { question: `What is the ${n}th Catalan number?`, answer: String(catalan(n)) };
+    return {
+      question: `What is the ${n}th Catalan number?`,
+      answer: String(catalan(n)),
+      formulaHint: `Use C_n = (2n)! / ((n + 1)! x n!). Here n = ${n}.`,
+    };
   }
   if (variant === 1) {
     const a = 12 + step;
     const b = 10 + (step % 19);
     const c = 7 + (step % 14);
-    return { question: `What is ${a} to the 4th power minus ${b} cubed plus ${c} squared?`, answer: String((a ** 4) - (b ** 3) + (c * c)) };
+    return {
+      question: `What is ${a} to the 4th power minus ${b} cubed plus ${c} squared?`,
+      answer: String((a ** 4) - (b ** 3) + (c * c)),
+      formulaHint: `Calculate ${a}^4 - ${b}^3 + ${c}^2. Break it into (${a}^2 x ${a}^2) - (${b} x ${b} x ${b}) + (${c} x ${c}).`,
+    };
   }
   if (variant === 2) {
     const n = 25 + step;
-    return { question: `What is Euler's totient of ${n} squared?`, answer: String(totient(n * n)) };
+    return {
+      question: `What is Euler's totient of ${n} squared?`,
+      answer: String(totient(n * n)),
+      formulaHint: `Use phi(N) = N x product(1 - 1/p) over the distinct prime factors of N. Here N = ${n}^2.`,
+    };
   }
   if (variant === 3) {
     const n = 7 + step;
-    return { question: `How many derangements are there of ${n} objects?`, answer: String(derangements(n)) };
+    return {
+      question: `How many derangements are there of ${n} objects?`,
+      answer: String(derangements(n)),
+      formulaHint: `Use !n = (n - 1) x (!(n - 1) + !(n - 2)), starting with !1 = 0 and !2 = 1. Here n = ${n}.`,
+    };
   }
   const a = 19 + step;
   const b = 11 + (step % 13);
   const m = 101 + (step * 6);
-  return { question: `What is the remainder when ${a} to the ${b} power is divided by ${m}?`, answer: String(modPow(a, b, m)) };
+  return {
+    question: `What is the remainder when ${a} to the ${b} power is divided by ${m}?`,
+    answer: String(modPow(a, b, m)),
+    formulaHint: `Use repeated squaring: square the base, reduce mod ${m} each time, and multiply only the powers needed for exponent ${b}.`,
+  };
 }
 
 function gcd(a, b) {
@@ -1607,6 +1650,34 @@ function getCurrentOneHintQuestion() {
   return currentOneHintQuestion || config.buildQuestion(oneHintQuestionIndex);
 }
 
+function supportsOneHintFormulaHint() {
+  return currentOneHintDifficulty === "insane" || currentOneHintDifficulty === "impossible";
+}
+
+function hideOneHintFormulaHint() {
+  dom.oneHintFormulaHint.textContent = "";
+  dom.oneHintFormulaHint.hidden = true;
+}
+
+function updateOneHintFormulaHintUi(question = getCurrentOneHintQuestion()) {
+  const canShowHint = supportsOneHintFormulaHint() && Boolean(question.formulaHint);
+  dom.oneHintFormulaBtn.hidden = !canShowHint;
+  dom.oneHintFormulaBtn.disabled = !canShowHint || oneHintSolved || !currentUser || !currentUsername;
+  if (!canShowHint) {
+    hideOneHintFormulaHint();
+  }
+}
+
+function showOneHintFormulaHint() {
+  const currentQuestion = getCurrentOneHintQuestion();
+  if (!supportsOneHintFormulaHint() || !currentQuestion.formulaHint) {
+    return;
+  }
+
+  dom.oneHintFormulaHint.textContent = currentQuestion.formulaHint;
+  dom.oneHintFormulaHint.hidden = false;
+}
+
 function initializeOneHintQuestionForPlayer() {
   if (oneHintInitialized) {
     return true;
@@ -1642,6 +1713,7 @@ function renderOneHintQuestion() {
     dom.oneHintAttemptBadge.textContent = "0 tries";
     dom.oneHintInput.disabled = true;
     dom.oneHintSubmitBtn.disabled = true;
+    updateOneHintFormulaHintUi({ formulaHint: "" });
     return;
   }
 
@@ -1655,6 +1727,8 @@ function renderOneHintQuestion() {
   dom.oneHintAttemptBadge.textContent = `${oneHintAttempts} ${oneHintAttempts === 1 ? "try" : "tries"}`;
   dom.oneHintInput.disabled = oneHintSolved || !currentUser || !currentUsername;
   dom.oneHintSubmitBtn.disabled = oneHintSolved || !currentUser || !currentUsername;
+  hideOneHintFormulaHint();
+  updateOneHintFormulaHintUi(currentQuestion);
 }
 
 function startNewOneHintQuestion() {
@@ -1719,6 +1793,7 @@ function handleOneHintSubmit(event) {
     dom.oneHintFeedback.className = "one-hint-feedback is-correct";
     dom.oneHintInput.disabled = true;
     dom.oneHintSubmitBtn.disabled = true;
+    updateOneHintFormulaHintUi();
     return;
   }
 
@@ -2357,6 +2432,7 @@ function setGameLocked(locked) {
   dom.oneHintInput.disabled = locked || oneHintSolved;
   dom.oneHintSubmitBtn.disabled = locked || oneHintSolved;
   dom.oneHintNewBtn.disabled = locked;
+  dom.oneHintFormulaBtn.disabled = locked || oneHintSolved || !supportsOneHintFormulaHint();
   dom.dailyChallengeBtn.disabled = locked;
   dom.modeTabs.querySelectorAll(".mode-tab").forEach((button) => {
     button.disabled = locked;
