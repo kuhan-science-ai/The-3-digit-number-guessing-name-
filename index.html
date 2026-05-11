@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css?v=20260511-4" />
+  <link rel="stylesheet" href="./styles.css?v=20260511-5" />
 </head>
 <body>
   <div class="ambient ambient-left" aria-hidden="true"></div>
@@ -133,6 +133,7 @@
       <nav id="gamePageTabs" class="game-page-tabs" aria-label="Game sections">
         <button class="game-page-tab is-active" type="button" data-tab="intro">Intro & Rules</button>
         <button class="game-page-tab" type="button" data-tab="game">Hardcore Game</button>
+        <button class="game-page-tab" type="button" data-tab="challenge">Challenge</button>
         <button class="game-page-tab" type="button" data-tab="rankings">Rankings</button>
       </nav>
 
@@ -158,15 +159,74 @@
           </p>
         </section>
 
-        <section class="challenge-panel story-challenge-panel">
+        <section class="rules-guide">
           <div class="tracker-top">
             <div>
-              <p class="mini-label">Challenge mode</p>
-              <h3>Challenge a friend</h3>
+              <p class="mini-label">Rules guide</p>
+              <h3>How to read each clue</h3>
+            </div>
+          </div>
+          <div class="rules-grid">
+            <article>
+              <strong>Correct digit, correct place</strong>
+              <p>If the secret is <b>479</b> and you guess <b>489</b>, the 4 and 9 are counted as correct-place digits because they sit in the exact same slots.</p>
+            </article>
+            <article>
+              <strong>Correct digit, wrong place</strong>
+              <p>If the secret is <b>479</b> and you guess <b>914</b>, the 9 and 4 belong to the code, but both are in different positions.</p>
+            </article>
+            <article>
+              <strong>No repeated digits in Classic</strong>
+              <p>Classic, Hard, and Time Attack use unique digits. A guess like <b>447</b> is not valid there because 4 repeats.</p>
+            </article>
+            <article>
+              <strong>Use elimination</strong>
+              <p>If a clue says none of your guessed digits are in the code, cross those digits out and build the next guess from fresh digits.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="example-card example-stack">
+          <p class="mini-label">More examples</p>
+          <div class="example-list">
+            <article>
+              <strong>Secret 479 · Guess 123</strong>
+              <p>No digits match. You can safely avoid 1, 2, and 3 next time.</p>
+            </article>
+            <article>
+              <strong>Secret 479 · Guess 974</strong>
+              <p>Three digits are correct, but all are in the wrong place. Keep 9, 7, and 4, then rotate them.</p>
+            </article>
+            <article>
+              <strong>Secret 479 · Guess 476</strong>
+              <p>Two digits are correct and in the right place. The third slot needs a different digit.</p>
+            </article>
+            <article>
+              <strong>Secret 479 · Guess 497</strong>
+              <p>One digit is in the right place and two are in the wrong place. Keep the fixed digit and swap the others.</p>
+            </article>
+          </div>
+        </section>
+      </aside>
+
+      <section id="challengeTabPanel" class="challenge-tab-panel tab-panel">
+        <div class="challenge-tab-header">
+          <div>
+            <p class="mini-label">Challenge mode</p>
+            <h2>Challenge a friend</h2>
+          </div>
+          <span class="attempt-badge">Shared secret</span>
+        </div>
+
+        <section class="challenge-panel challenge-tab-card">
+          <div class="tracker-top">
+            <div>
+              <p class="mini-label">Match setup</p>
+              <h3>Create a duel link</h3>
             </div>
           </div>
           <p class="challenge-copy">
-            Enter your opponent's username, generate one link, and both of you will solve the same hidden number.
+            Enter your opponent's username, generate one private link, and both of you will solve the same hidden number. The winner is whoever solves it in fewer attempts.
           </p>
           <div class="challenge-identity">
             <div class="challenge-user-pill">
@@ -200,7 +260,7 @@
             placeholder="Challenge link with both usernames will appear here"
           />
         </section>
-      </aside>
+      </section>
 
       <section id="gameTabPanel" class="play-panel tab-panel">
         <div class="game-left-column">
@@ -411,7 +471,7 @@
     </section>
   </main>
 
-  <script type="module" src="./app.js?v=20260511-4"></script>
+  <script type="module" src="./app.js?v=20260511-5"></script>
 </body>
 </html>
 

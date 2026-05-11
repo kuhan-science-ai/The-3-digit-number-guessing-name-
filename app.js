@@ -80,6 +80,7 @@ const dom = {
   gamePageTabs: document.getElementById("gamePageTabs"),
   introTabPanel: document.getElementById("introTabPanel"),
   gameTabPanel: document.getElementById("gameTabPanel"),
+  challengeTabPanel: document.getElementById("challengeTabPanel"),
   rankingsTabPanel: document.getElementById("rankingsTabPanel"),
   focusModeBtn: document.getElementById("focusModeBtn"),
   guessForm: document.getElementById("guessForm"),
@@ -239,7 +240,7 @@ function handleGamePageTabClick(event) {
 }
 
 function setActivePageTab(tabName) {
-  activePageTab = ["intro", "game", "rankings"].includes(tabName) ? tabName : "intro";
+  activePageTab = ["intro", "game", "challenge", "rankings"].includes(tabName) ? tabName : "intro";
   dom.gamePageTabs.querySelectorAll("[data-tab]").forEach((button) => {
     const isActive = button.dataset.tab === activePageTab;
     button.classList.toggle("is-active", isActive);
@@ -248,10 +249,13 @@ function setActivePageTab(tabName) {
 
   dom.introTabPanel.classList.toggle("is-active", activePageTab === "intro");
   dom.gameTabPanel.classList.toggle("is-active", activePageTab === "game");
+  dom.challengeTabPanel.classList.toggle("is-active", activePageTab === "challenge");
   dom.rankingsTabPanel.classList.toggle("is-active", activePageTab === "rankings");
 
   if (activePageTab === "game") {
     dom.guessInput.focus();
+  } else if (activePageTab === "challenge") {
+    dom.challengeOpponentInput.focus();
   } else if (activePageTab === "rankings") {
     renderLeaderboard();
   }
