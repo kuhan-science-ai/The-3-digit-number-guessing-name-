@@ -282,6 +282,17 @@ body::after {
   box-shadow: var(--shadow);
 }
 
+.one-hint-mode-tabs {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.one-hint-mode-tabs .mode-tab {
+  min-width: 0;
+  padding: 0 10px;
+}
+
 .one-hint-form {
   display: grid;
   grid-template-columns: minmax(180px, 320px) auto;
@@ -1696,6 +1707,10 @@ body.focus-mode .status-panel {
 
   .one-hint-form {
     grid-template-columns: 1fr;
+  }
+
+  .one-hint-mode-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .rules-grid,

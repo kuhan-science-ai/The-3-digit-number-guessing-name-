@@ -75,40 +75,58 @@ const GAME_MODES = {
     timeLimitSeconds: 90,
   },
 };
-const ONE_HINT_QUESTIONS = [
-  {
-    question: "What is the even prime number?",
-    answer: "2",
+const ONE_HINT_DIFFICULTIES = {
+  easy: {
+    label: "Easy",
+    questions: [
+      { question: "What is the only even prime number?", answer: "2" },
+      { question: "What number is three squared?", answer: "9" },
+      { question: "What number is half of 100?", answer: "50" },
+      { question: "What number is one dozen?", answer: "12" },
+      { question: "What number is the smallest two-digit prime?", answer: "11" },
+    ],
   },
-  {
-    question: "What number is the first square number after zero?",
-    answer: "1",
+  medium: {
+    label: "Medium",
+    questions: [
+      { question: "What is the 10th Fibonacci number if the sequence starts 1, 1?", answer: "55" },
+      { question: "What is the smallest positive integer with exactly 12 positive divisors?", answer: "60" },
+      { question: "What is 12 squared minus 5 squared?", answer: "119" },
+      { question: "What is the least common multiple of 8, 9, and 12?", answer: "72" },
+      { question: "What is the sum of the first 15 positive integers?", answer: "120" },
+    ],
   },
-  {
-    question: "What number is three squared?",
-    answer: "9",
+  expert: {
+    label: "Expert",
+    questions: [
+      { question: "What is 17 squared?", answer: "289" },
+      { question: "What is the 12th triangular number?", answer: "78" },
+      { question: "What is the least positive number divisible by every integer from 1 through 10?", answer: "2520" },
+      { question: "What is Euler's totient of 36?", answer: "12" },
+      { question: "What is 9 factorial divided by 7 factorial?", answer: "72" },
+    ],
   },
-  {
-    question: "What number is half of 100?",
-    answer: "50",
+  insane: {
+    label: "Insane",
+    questions: [
+      { question: "What is the smallest Carmichael number?", answer: "561" },
+      { question: "What is 2 to the 10th power plus 3 to the 5th power?", answer: "1267" },
+      { question: "What is the product of the first five prime numbers?", answer: "2310" },
+      { question: "What is 13 cubed minus 11 cubed?", answer: "866" },
+      { question: "What is the number of derangements of 6 objects?", answer: "265" },
+    ],
   },
-  {
-    question: "What number is the only single-digit cube greater than 1?",
-    answer: "8",
+  impossible: {
+    label: "Impossible",
+    questions: [
+      { question: "What is the first non-trivial taxicab number?", answer: "1729" },
+      { question: "What is the 10th Catalan number?", answer: "16796" },
+      { question: "What is the Kaprekar constant for four-digit numbers?", answer: "6174" },
+      { question: "What is the smallest Dudeney number greater than 1?", answer: "512" },
+      { question: "What is the smallest number expressible as the sum of two positive cubes in two different ways?", answer: "1729" },
+    ],
   },
-  {
-    question: "What number is one dozen?",
-    answer: "12",
-  },
-  {
-    question: "What number is the smallest two-digit prime?",
-    answer: "11",
-  },
-  {
-    question: "What number is 7 plus 6?",
-    answer: "13",
-  },
-];
+};
 
 const dom = {
   gamePageTabs: document.getElementById("gamePageTabs"),
@@ -145,6 +163,7 @@ const dom = {
   challengeCurrentUsername: document.getElementById("challengeCurrentUsername"),
   challengeOpponentInput: document.getElementById("challengeOpponentInput"),
   challengeMeta: document.getElementById("challengeMeta"),
+  oneHintModeTabs: document.getElementById("oneHintModeTabs"),
   oneHintForm: document.getElementById("oneHintForm"),
   oneHintQuestion: document.getElementById("oneHintQuestion"),
   oneHintInput: document.getElementById("oneHintInput"),
@@ -209,6 +228,7 @@ let timerInterval = null;
 let solvedSummary = null;
 let settings = loadSettings();
 let deferredInstallPrompt = null;
+let currentOneHintDifficulty = "easy";
 let oneHintQuestionIndex = 0;
 let oneHintAttempts = 0;
 let oneHintSolved = false;
@@ -235,6 +255,7 @@ function init() {
   dom.challengeFriendBtn.addEventListener("click", handleCreateChallenge);
   dom.copyChallengeBtn.addEventListener("click", handleCopyChallengeLink);
   dom.challengeOpponentInput.addEventListener("input", handleChallengeOpponentInput);
+  dom.oneHintModeTabs.addEventListener("click", handleOneHintModeClick);
   dom.oneHintForm.addEventListener("submit", handleOneHintSubmit);
   dom.oneHintInput.addEventListener("input", handleOneHintInput);
   dom.oneHintNewBtn.addEventListener("click", startNewOneHintQuestion);
@@ -1363,8 +1384,17 @@ function handleChallengeOpponentInput() {
   saveGameState();
 }
 
+function getOneHintDifficultyConfig() {
+  return ONE_HINT_DIFFICULTIES[currentOneHintDifficulty] || ONE_HINT_DIFFICULTIES.easy;
+}
+
+function getOneHintQuestions() {
+  return getOneHintDifficultyConfig().questions;
+}
+
 function getCurrentOneHintQuestion() {
-  return ONE_HINT_QUESTIONS[oneHintQuestionIndex] || ONE_HINT_QUESTIONS[0];
+  const questions = getOneHintQuestions();
+  return questions[oneHintQuestionIndex] || questions[0];
 }
 
 function initializeOneHintQuestionForPlayer() {
@@ -1377,7 +1407,7 @@ function initializeOneHintQuestionForPlayer() {
   }
 
   const playerSeed = `${currentUser.uid}:${currentUsername}`;
-  oneHintQuestionIndex = hashString(`${playerSeed}:one-hint`) % ONE_HINT_QUESTIONS.length;
+  oneHintQuestionIndex = hashString(`${playerSeed}:one-hint:${currentOneHintDifficulty}`) % getOneHintQuestions().length;
   oneHintAttempts = 0;
   oneHintSolved = false;
   oneHintInitialized = true;
@@ -1385,6 +1415,12 @@ function initializeOneHintQuestionForPlayer() {
 }
 
 function renderOneHintQuestion() {
+  dom.oneHintModeTabs.querySelectorAll("[data-one-hint-mode]").forEach((button) => {
+    const isActive = button.dataset.oneHintMode === currentOneHintDifficulty;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-selected", String(isActive));
+  });
+
   const hasPlayerQuestion = initializeOneHintQuestionForPlayer();
   if (!hasPlayerQuestion) {
     dom.oneHintQuestion.textContent = "Your clue is loading.";
@@ -1413,7 +1449,25 @@ function renderOneHintQuestion() {
 
 function startNewOneHintQuestion() {
   initializeOneHintQuestionForPlayer();
-  oneHintQuestionIndex = (oneHintQuestionIndex + 1) % ONE_HINT_QUESTIONS.length;
+  oneHintQuestionIndex = (oneHintQuestionIndex + 1) % getOneHintQuestions().length;
+  oneHintAttempts = 0;
+  oneHintSolved = false;
+  renderOneHintQuestion();
+  dom.oneHintInput.focus();
+}
+
+function handleOneHintModeClick(event) {
+  const target = event.target;
+  if (!(target instanceof HTMLButtonElement) || !target.dataset.oneHintMode) {
+    return;
+  }
+
+  if (!ONE_HINT_DIFFICULTIES[target.dataset.oneHintMode]) {
+    return;
+  }
+
+  currentOneHintDifficulty = target.dataset.oneHintMode;
+  oneHintInitialized = false;
   oneHintAttempts = 0;
   oneHintSolved = false;
   renderOneHintQuestion();

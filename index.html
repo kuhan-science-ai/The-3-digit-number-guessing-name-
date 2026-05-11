@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css?v=20260511-7" />
+  <link rel="stylesheet" href="./styles.css?v=20260511-8" />
 </head>
 <body>
   <div class="ambient ambient-left" aria-hidden="true"></div>
@@ -451,6 +451,13 @@
         </div>
 
         <section class="one-hint-card">
+          <div id="oneHintModeTabs" class="one-hint-mode-tabs" role="tablist" aria-label="One hint difficulty">
+            <button type="button" class="mode-tab is-active" data-one-hint-mode="easy">Easy</button>
+            <button type="button" class="mode-tab" data-one-hint-mode="medium">Medium</button>
+            <button type="button" class="mode-tab" data-one-hint-mode="expert">Expert</button>
+            <button type="button" class="mode-tab" data-one-hint-mode="insane">Insane</button>
+            <button type="button" class="mode-tab" data-one-hint-mode="impossible">Impossible</button>
+          </div>
           <div class="tracker-top">
             <div>
               <p class="mini-label">Computer clue</p>
@@ -500,7 +507,7 @@
     </section>
   </main>
 
-  <script type="module" src="./app.js?v=20260511-7"></script>
+  <script type="module" src="./app.js?v=20260511-8"></script>
 </body>
 </html>
 
