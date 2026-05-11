@@ -776,7 +776,7 @@ function buildInsaneOneHintQuestion(index) {
     return {
       question: `What is the remainder when ${base} to the ${exponent} power is divided by ${modulus}?`,
       answer: String(modPow(base, exponent, modulus)),
-      formulaHint: `Use modular exponentiation: keep reducing after each multiplication, so (${base}^${exponent}) mod ${modulus} never needs the full power.`,
+      formulaHint: `Use modular exponentiation: \\(${base}^{${exponent}} \\bmod ${modulus}\\). Reduce after each multiplication: \\(r_{k+1} \\equiv r_k \\cdot ${base} \\pmod{${modulus}}\\).`,
     };
   }
   if (variant === 1) {
@@ -785,7 +785,7 @@ function buildInsaneOneHintQuestion(index) {
     return {
       question: `What is ${a} times ${b} minus their greatest common divisor?`,
       answer: String((a * b) - gcd(a, b)),
-      formulaHint: `Calculate (${a} x ${b}) - gcd(${a}, ${b}). Find the gcd with Euclid's rule: gcd(a, b) = gcd(b, a mod b).`,
+      formulaHint: `Calculate \\(${a}\\cdot${b}-\\gcd(${a},${b})\\). Use Euclid's rule: \\(\\gcd(a,b)=\\gcd(b, a \\bmod b)\\).`,
     };
   }
   if (variant === 2) {
@@ -793,7 +793,7 @@ function buildInsaneOneHintQuestion(index) {
     return {
       question: `What is ${n} factorial divided by ${n - 3} factorial?`,
       answer: String(n * (n - 1) * (n - 2)),
-      formulaHint: `${n}! / ${n - 3}! cancels down to ${n} x ${n - 1} x ${n - 2}.`,
+      formulaHint: `Cancel the factorials: \\(\\dfrac{${n}!}{${n - 3}!}=${n}\\cdot${n - 1}\\cdot${n - 2}\\).`,
     };
   }
   if (variant === 3) {
@@ -801,7 +801,7 @@ function buildInsaneOneHintQuestion(index) {
     return {
       question: `What is the ${n}th Catalan number?`,
       answer: String(catalan(n)),
-      formulaHint: `Use C_n = (2n)! / ((n + 1)! x n!). Here n = ${n}.`,
+      formulaHint: `Use the Catalan formula: \\(C_n=\\dfrac{(2n)!}{(n+1)!\\,n!}\\). Here \\(n=${n}\\).`,
     };
   }
   const a = 18 + step;
@@ -809,7 +809,7 @@ function buildInsaneOneHintQuestion(index) {
   return {
     question: `What is ${a} squared plus ${b} cubed?`,
     answer: String((a * a) + (b ** 3)),
-    formulaHint: `Calculate ${a}^2 + ${b}^3, so (${a} x ${a}) + (${b} x ${b} x ${b}).`,
+    formulaHint: `Calculate \\(${a}^2+${b}^3\\). Expanded: \\(${a}\\cdot${a}+${b}\\cdot${b}\\cdot${b}\\).`,
   };
 }
 
@@ -821,7 +821,7 @@ function buildImpossibleOneHintQuestion(index) {
     return {
       question: `What is the ${n}th Catalan number?`,
       answer: String(catalan(n)),
-      formulaHint: `Use C_n = (2n)! / ((n + 1)! x n!). Here n = ${n}.`,
+      formulaHint: `Use the Catalan formula: \\(C_n=\\dfrac{(2n)!}{(n+1)!\\,n!}\\). Here \\(n=${n}\\).`,
     };
   }
   if (variant === 1) {
@@ -831,7 +831,7 @@ function buildImpossibleOneHintQuestion(index) {
     return {
       question: `What is ${a} to the 4th power minus ${b} cubed plus ${c} squared?`,
       answer: String((a ** 4) - (b ** 3) + (c * c)),
-      formulaHint: `Calculate ${a}^4 - ${b}^3 + ${c}^2. Break it into (${a}^2 x ${a}^2) - (${b} x ${b} x ${b}) + (${c} x ${c}).`,
+      formulaHint: `Calculate \\(${a}^4-${b}^3+${c}^2\\). Break it into \\((${a}^2)^2-(${b}\\cdot${b}\\cdot${b})+${c}^2\\).`,
     };
   }
   if (variant === 2) {
@@ -839,7 +839,7 @@ function buildImpossibleOneHintQuestion(index) {
     return {
       question: `What is Euler's totient of ${n} squared?`,
       answer: String(totient(n * n)),
-      formulaHint: `Use phi(N) = N x product(1 - 1/p) over the distinct prime factors of N. Here N = ${n}^2.`,
+      formulaHint: `Use Euler's product formula: \\(\\varphi(N)=N\\prod_{p\\mid N}\\left(1-\\dfrac{1}{p}\\right)\\). Here \\(N=${n}^2\\).`,
     };
   }
   if (variant === 3) {
@@ -847,7 +847,7 @@ function buildImpossibleOneHintQuestion(index) {
     return {
       question: `How many derangements are there of ${n} objects?`,
       answer: String(derangements(n)),
-      formulaHint: `Use !n = (n - 1) x (!(n - 1) + !(n - 2)), starting with !1 = 0 and !2 = 1. Here n = ${n}.`,
+      formulaHint: `Use the derangement recurrence: \\(!n=(n-1)\\big(!(n-1)+!(n-2)\\big)\\), with \\(!1=0\\) and \\(!2=1\\). Here \\(n=${n}\\).`,
     };
   }
   const a = 19 + step;
@@ -856,7 +856,7 @@ function buildImpossibleOneHintQuestion(index) {
   return {
     question: `What is the remainder when ${a} to the ${b} power is divided by ${m}?`,
     answer: String(modPow(a, b, m)),
-    formulaHint: `Use repeated squaring: square the base, reduce mod ${m} each time, and multiply only the powers needed for exponent ${b}.`,
+    formulaHint: `Use repeated squaring for \\(${a}^{${b}} \\bmod ${m}\\): \\(a^{2k}\\equiv (a^k)^2 \\pmod{${m}}\\), reducing after every square and multiply.`,
   };
 }
 
@@ -1676,6 +1676,18 @@ function showOneHintFormulaHint() {
 
   dom.oneHintFormulaHint.textContent = currentQuestion.formulaHint;
   dom.oneHintFormulaHint.hidden = false;
+  typesetFormulaHint();
+}
+
+function typesetFormulaHint() {
+  const mathJax = window.MathJax;
+  if (!mathJax?.typesetPromise) {
+    return;
+  }
+
+  mathJax.typesetPromise([dom.oneHintFormulaHint]).catch(() => {
+    // Leave the readable LaTeX source visible if MathJax cannot render.
+  });
 }
 
 function initializeOneHintQuestionForPlayer() {
