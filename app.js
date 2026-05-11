@@ -277,8 +277,21 @@ function saveSettings() {
   localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
 }
 
+function isBeginnerCoachAvailable() {
+  return settings.beginnerHints && !isDailyRankedGame();
+}
+
+function updateBeginnerCoachToggleUi() {
+  const disabledForDaily = isDailyRankedGame();
+  dom.beginnerHintsToggle.disabled = disabledForDaily;
+  dom.beginnerHintsToggle.title = disabledForDaily
+    ? "Beginner coach is disabled for Daily games."
+    : "";
+}
+
 function updateSettingsUi() {
   dom.beginnerHintsToggle.checked = Boolean(settings.beginnerHints);
+  updateBeginnerCoachToggleUi();
   dom.soundToggle.checked = Boolean(settings.sound);
   dom.vibrationToggle.checked = Boolean(settings.vibration);
   dom.installAppBtn.disabled = !deferredInstallPrompt;
@@ -392,7 +405,8 @@ function isDailyRankedGame() {
 }
 
 function updateCoachPanel(text = "") {
-  const available = settings.beginnerHints && !isDailyRankedGame();
+  updateBeginnerCoachToggleUi();
+  const available = isBeginnerCoachAvailable();
   dom.coachPanel.hidden = !available;
 
   if (!available) {
