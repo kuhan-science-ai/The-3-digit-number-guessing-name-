@@ -459,7 +459,11 @@
             <p class="mini-label">One hint mode</p>
             <h2>Guess from one clue</h2>
           </div>
-          <span id="oneHintAttemptBadge" class="attempt-badge">0 tries</span>
+          <div class="one-hint-stats" aria-label="One hint progress">
+            <span id="oneHintAttemptBadge" class="attempt-badge">0 tries</span>
+            <span id="oneHintScoreBadge" class="attempt-badge">100 pts</span>
+            <span id="oneHintStreakBadge" class="attempt-badge">0 streak</span>
+          </div>
         </div>
 
         <section class="one-hint-card">
@@ -482,10 +486,12 @@
             <input id="oneHintInput" class="guess-input one-hint-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="Answer" />
             <div class="button-row">
               <button id="oneHintSubmitBtn" class="primary-btn" type="submit">Check Answer</button>
-              <button id="oneHintFormulaBtn" class="ghost-btn one-hint-formula-btn" type="button" hidden>Formula Hint</button>
+              <button id="oneHintFormulaBtn" class="ghost-btn one-hint-formula-btn" type="button" hidden aria-describedby="oneHintHintHelp">Hint 1</button>
             </div>
           </form>
-          <p id="oneHintFormulaHint" class="one-hint-formula-hint" hidden></p>
+          <p id="oneHintHintHelp" class="sr-only">Each hint lowers your One Hint score for this clue.</p>
+          <p id="oneHintFormulaHint" class="one-hint-formula-hint" aria-live="polite" hidden></p>
+          <div id="oneHintSolution" class="one-hint-solution" aria-live="polite" hidden></div>
           <p id="oneHintFeedback" class="one-hint-feedback" aria-live="polite">Use the clue. This mode only says correct or wrong.</p>
         </section>
       </section>

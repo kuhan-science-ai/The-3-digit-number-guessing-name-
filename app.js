@@ -27,6 +27,10 @@ const SETTINGS_STORAGE_KEY = "number-guessing-game-settings-v1";
 const STREAK_STORAGE_KEY = "number-guessing-game-daily-streak-v1";
 const TUTORIAL_STORAGE_KEY = "number-guessing-game-tutorial-seen-v1";
 const ONE_HINT_PROGRESS_STORAGE_PREFIX = "number-guessing-game-one-hint-progress-v1";
+const ONE_HINT_STREAK_STORAGE_PREFIX = "number-guessing-game-one-hint-streak-v1";
+const ONE_HINT_MAX_SCORE = 100;
+const ONE_HINT_ATTEMPT_PENALTY = 8;
+const ONE_HINT_HINT_PENALTY = 15;
 const CHALLENGE_PARAM = "challenge";
 const CHALLENGE_FROM_PARAM = "from";
 const CHALLENGE_TO_PARAM = "to";
@@ -142,8 +146,11 @@ const dom = {
   oneHintNewBtn: document.getElementById("oneHintNewBtn"),
   oneHintFormulaBtn: document.getElementById("oneHintFormulaBtn"),
   oneHintFormulaHint: document.getElementById("oneHintFormulaHint"),
+  oneHintSolution: document.getElementById("oneHintSolution"),
   oneHintFeedback: document.getElementById("oneHintFeedback"),
   oneHintAttemptBadge: document.getElementById("oneHintAttemptBadge"),
+  oneHintScoreBadge: document.getElementById("oneHintScoreBadge"),
+  oneHintStreakBadge: document.getElementById("oneHintStreakBadge"),
   profileMenuBtn: document.getElementById("profileMenuBtn"),
   profileAvatar: document.getElementById("profileAvatar"),
   profileDropdown: document.getElementById("profileDropdown"),
@@ -205,6 +212,7 @@ let currentOneHintDifficulty = "easy";
 let oneHintQuestionIndex = 0;
 let currentOneHintQuestion = null;
 let oneHintAttempts = 0;
+let oneHintHintLevel = 0;
 let oneHintSolved = false;
 let oneHintInitialized = false;
 
@@ -687,177 +695,487 @@ function seededRandom(seed) {
   };
 }
 
+function createOneHintQuestion({ question, answer, hints = [], solution = "" }) {
+  const normalizedAnswer = String(answer);
+  const normalizedHints = hints.filter(Boolean);
+  return {
+    question,
+    answer: normalizedAnswer,
+    hints: normalizedHints,
+    formulaHint: normalizedHints[0] || "",
+    solution: solution || `The answer is \\(${normalizedAnswer}\\).`,
+  };
+}
+
 function buildEasyOneHintQuestion(index) {
-  const variant = index % 5;
-  const step = Math.floor(index / 5);
+  const variant = index % 8;
+  const step = Math.floor(index / 8);
   if (variant === 0) {
     const base = 4 + step;
-    return { question: `What is ${base} squared?`, answer: String(base * base) };
+    return createOneHintQuestion({
+      question: `What is ${base} squared?`,
+      answer: base * base,
+      solution: `Square the base: \\(${base}^2=${base}\\cdot${base}=${base * base}\\).`,
+    });
   }
   if (variant === 1) {
     const a = 12 + (step * 3);
     const b = 6 + (step * 2);
-    return { question: `What is ${a} plus ${b}?`, answer: String(a + b) };
+    return createOneHintQuestion({
+      question: `What is ${a} plus ${b}?`,
+      answer: a + b,
+      solution: `Add the two terms: \\(${a}+${b}=${a + b}\\).`,
+    });
   }
   if (variant === 2) {
     const a = 6 + step;
     const b = 4 + (step % 9);
-    return { question: `What is ${a} times ${b}?`, answer: String(a * b) };
+    return createOneHintQuestion({
+      question: `What is ${a} times ${b}?`,
+      answer: a * b,
+      solution: `Multiply directly: \\(${a}\\cdot${b}=${a * b}\\).`,
+    });
   }
   if (variant === 3) {
     const n = 8 + step;
-    return { question: `What is the ${n}th even number?`, answer: String(n * 2) };
+    return createOneHintQuestion({
+      question: `What is the ${n}th even number?`,
+      answer: n * 2,
+      solution: `The \\(n\\)th even number is \\(2n\\), so \\(2\\cdot${n}=${n * 2}\\).`,
+    });
   }
-  const answer = 20 + (step * 4);
-  const multiplier = 2 + (step % 5);
-  return { question: `What number multiplied by ${multiplier} gives ${answer * multiplier}?`, answer: String(answer) };
+  if (variant === 4) {
+    const answer = 20 + (step * 4);
+    const multiplier = 2 + (step % 5);
+    return createOneHintQuestion({
+      question: `What number multiplied by ${multiplier} gives ${answer * multiplier}?`,
+      answer,
+      solution: `Divide by the multiplier: \\(\\dfrac{${answer * multiplier}}{${multiplier}}=${answer}\\).`,
+    });
+  }
+  if (variant === 5) {
+    const first = 7 + step;
+    const difference = 3 + (step % 4);
+    const n = 6 + (step % 5);
+    const answer = first + ((n - 1) * difference);
+    return createOneHintQuestion({
+      question: `In an arithmetic sequence starting at ${first} and adding ${difference}, what is term ${n}?`,
+      answer,
+      solution: `Use \\(a_n=a_1+(n-1)d\\): \\(${first}+(${n}-1)\\cdot${difference}=${answer}\\).`,
+    });
+  }
+  if (variant === 6) {
+    const n = 5 + (step % 5);
+    const r = 2;
+    return createOneHintQuestion({
+      question: `How many ways can you choose ${r} objects from ${n} objects?`,
+      answer: combination(n, r),
+      solution: `Use \\(\\binom{n}{r}=\\dfrac{n!}{r!(n-r)!}\\): \\(\\binom{${n}}{${r}}=${combination(n, r)}\\).`,
+    });
+  }
+  const first = 3 + step;
+  const ratio = 2;
+  const n = 4 + (step % 4);
+  const answer = first * (ratio ** (n - 1));
+  return createOneHintQuestion({
+    question: `In a geometric sequence starting at ${first} and multiplying by ${ratio}, what is term ${n}?`,
+    answer,
+    solution: `Use \\(a_n=a_1r^{n-1}\\): \\(${first}\\cdot${ratio}^{${n - 1}}=${answer}\\).`,
+  });
 }
 
 function buildMediumOneHintQuestion(index) {
-  const variant = index % 5;
-  const step = Math.floor(index / 5);
+  const variant = index % 8;
+  const step = Math.floor(index / 8);
   if (variant === 0) {
     const n = 12 + step;
-    return { question: `What is the ${n}th triangular number?`, answer: String((n * (n + 1)) / 2) };
+    return createOneHintQuestion({
+      question: `What is the ${n}th triangular number?`,
+      answer: (n * (n + 1)) / 2,
+      solution: `Use \\(T_n=\\dfrac{n(n+1)}{2}\\): \\(T_${n}=\\dfrac{${n}\\cdot${n + 1}}{2}\\).`,
+    });
   }
   if (variant === 1) {
     const a = 11 + step;
     const b = 3 + (step % 7);
-    return { question: `What is ${a} squared minus ${b} squared?`, answer: String((a * a) - (b * b)) };
+    return createOneHintQuestion({
+      question: `What is ${a} squared minus ${b} squared?`,
+      answer: (a * a) - (b * b),
+      solution: `Use difference of squares: \\(${a}^2-${b}^2=(${a}-${b})(${a}+${b})=${(a * a) - (b * b)}\\).`,
+    });
   }
   if (variant === 2) {
     const a = 5 + step;
     const b = 7 + (step % 11);
-    return { question: `What is the least common multiple of ${a} and ${b}?`, answer: String(lcm(a, b)) };
+    return createOneHintQuestion({
+      question: `What is the least common multiple of ${a} and ${b}?`,
+      answer: lcm(a, b),
+      solution: `Use \\(\\operatorname{lcm}(a,b)=\\dfrac{|ab|}{\\gcd(a,b)}\\): \\(\\operatorname{lcm}(${a},${b})=${lcm(a, b)}\\).`,
+    });
   }
   if (variant === 3) {
     const n = 7 + step;
-    return { question: `What is ${n} factorial divided by ${n - 2} factorial?`, answer: String(n * (n - 1)) };
+    return createOneHintQuestion({
+      question: `What is ${n} factorial divided by ${n - 2} factorial?`,
+      answer: n * (n - 1),
+      solution: `Cancel the factorials: \\(\\dfrac{${n}!}{${n - 2}!}=${n}\\cdot${n - 1}=${n * (n - 1)}\\).`,
+    });
   }
-  const a = 18 + (step * 2);
-  const b = 4 + step;
-  const c = 3 + (step % 10);
-  return { question: `What is ${a} plus ${b} times ${c}?`, answer: String(a + (b * c)) };
+  if (variant === 4) {
+    const a = 18 + (step * 2);
+    const b = 4 + step;
+    const c = 3 + (step % 10);
+    return createOneHintQuestion({
+      question: `What is ${a} plus ${b} times ${c}?`,
+      answer: a + (b * c),
+      solution: `Use order of operations: \\(${a}+${b}\\cdot${c}=${a + (b * c)}\\).`,
+    });
+  }
+  if (variant === 5) {
+    const n = 8 + (step % 6);
+    const r = 3;
+    return createOneHintQuestion({
+      question: `How many ways can you choose ${r} objects from ${n} objects?`,
+      answer: combination(n, r),
+      solution: `Use \\(\\binom{n}{r}=\\dfrac{n!}{r!(n-r)!}\\): \\(\\binom{${n}}{${r}}=${combination(n, r)}\\).`,
+    });
+  }
+  if (variant === 6) {
+    const first = 6 + step;
+    const ratio = 3;
+    const n = 4 + (step % 3);
+    const answer = first * ((ratio ** n) - 1) / (ratio - 1);
+    return createOneHintQuestion({
+      question: `What is the sum of the first ${n} terms of a geometric sequence starting at ${first} with ratio ${ratio}?`,
+      answer,
+      solution: `Use \\(S_n=a\\dfrac{r^n-1}{r-1}\\): \\(${first}\\dfrac{${ratio}^${n}-1}{${ratio}-1}=${answer}\\).`,
+    });
+  }
+  const n = 30 + step;
+  return createOneHintQuestion({
+    question: `What is the sum of the prime factors of ${n}, counting repeats?`,
+    answer: primeFactorSum(n),
+    solution: `Factor \\(${n}\\) into primes and add the factors with repeats: \\(${primeFactors(n).join("+")}=${primeFactorSum(n)}\\).`,
+  });
 }
 
 function buildExpertOneHintQuestion(index) {
-  const variant = index % 5;
-  const step = Math.floor(index / 5);
+  const variant = index % 8;
+  const step = Math.floor(index / 8);
   if (variant === 0) {
     const n = 18 + step;
-    return { question: `What is Euler's totient of ${n}?`, answer: String(totient(n)) };
+    return createOneHintQuestion({
+      question: `What is Euler's totient of ${n}?`,
+      answer: totient(n),
+      solution: `Use \\(\\varphi(N)=N\\prod_{p\\mid N}\\left(1-\\dfrac{1}{p}\\right)\\): \\(\\varphi(${n})=${totient(n)}\\).`,
+    });
   }
   if (variant === 1) {
     const a = 13 + step;
     const b = 7 + (step % 11);
-    return { question: `What is ${a} cubed minus ${b} cubed?`, answer: String((a ** 3) - (b ** 3)) };
+    return createOneHintQuestion({
+      question: `What is ${a} cubed minus ${b} cubed?`,
+      answer: (a ** 3) - (b ** 3),
+      solution: `Use \\(a^3-b^3=(a-b)(a^2+ab+b^2)\\): \\(${a}^3-${b}^3=${(a ** 3) - (b ** 3)}\\).`,
+    });
   }
   if (variant === 2) {
     const a = 6 + step;
     const b = 8 + (step % 13);
     const c = 10 + (step % 17);
-    return { question: `What is the least common multiple of ${a}, ${b}, and ${c}?`, answer: String(lcm(lcm(a, b), c)) };
+    const answer = lcm(lcm(a, b), c);
+    return createOneHintQuestion({
+      question: `What is the least common multiple of ${a}, ${b}, and ${c}?`,
+      answer,
+      solution: `Combine pairwise LCMs: \\(\\operatorname{lcm}(\\operatorname{lcm}(${a},${b}),${c})=${answer}\\).`,
+    });
   }
   if (variant === 3) {
     const n = 5 + step;
-    return { question: `How many derangements are there of ${n} objects?`, answer: String(derangements(n)) };
+    return createOneHintQuestion({
+      question: `How many derangements are there of ${n} objects?`,
+      answer: derangements(n),
+      solution: `Use \\(!n=(n-1)\\big(!(n-1)+!(n-2)\\big)\\). For \\(n=${n}\\), \\(!${n}=${derangements(n)}\\).`,
+    });
   }
-  const n = 15 + step;
-  return { question: `What is the ${n}th Fibonacci number if the sequence starts 1, 1?`, answer: String(fibonacci(n)) };
+  if (variant === 4) {
+    const n = 15 + step;
+    return createOneHintQuestion({
+      question: `What is the ${n}th Fibonacci number if the sequence starts 1, 1?`,
+      answer: fibonacci(n),
+      solution: `Add the previous two terms repeatedly in \\(1,1,2,3,5,\\ldots\\). The \\(${n}\\)th term is \\(${fibonacci(n)}\\).`,
+    });
+  }
+  if (variant === 5) {
+    const n = 10 + (step % 6);
+    const r = 4;
+    return createOneHintQuestion({
+      question: `How many ways can you choose ${r} objects from ${n} objects?`,
+      answer: combination(n, r),
+      solution: `Use \\(\\binom{n}{r}=\\dfrac{n!}{r!(n-r)!}\\): \\(\\binom{${n}}{${r}}=${combination(n, r)}\\).`,
+    });
+  }
+  if (variant === 6) {
+    const a = 5 + (step % 11);
+    const m = [17, 19, 23, 29, 31, 37][step % 6];
+    return createOneHintQuestion({
+      question: `What is the modular inverse of ${a} modulo ${m}?`,
+      answer: modInverse(a, m),
+      solution: `Find \\(x\\) such that \\(${a}x\\equiv1\\pmod{${m}}\\). The inverse is \\(${modInverse(a, m)}\\).`,
+    });
+  }
+  const n = 42 + step;
+  return createOneHintQuestion({
+    question: `How many positive divisors does ${n} have?`,
+    answer: divisorCount(n),
+    solution: `If \\(N=\\prod p_i^{e_i}\\), then \\(d(N)=\\prod(e_i+1)\\). For \\(${n}\\), \\(d(${n})=${divisorCount(n)}\\).`,
+  });
 }
 
 function buildInsaneOneHintQuestion(index) {
-  const variant = index % 5;
-  const step = Math.floor(index / 5);
+  const variant = index % 8;
+  const step = Math.floor(index / 8);
   if (variant === 0) {
     const base = 7 + step;
     const exponent = 4 + (step % 5);
     const modulus = 23 + (step * 2);
-    return {
+    const answer = modPow(base, exponent, modulus);
+    return createOneHintQuestion({
       question: `What is the remainder when ${base} to the ${exponent} power is divided by ${modulus}?`,
-      answer: String(modPow(base, exponent, modulus)),
-      formulaHint: `Use modular exponentiation: \\(${base}^{${exponent}} \\bmod ${modulus}\\). Reduce after each multiplication: \\(r_{k+1} \\equiv r_k \\cdot ${base} \\pmod{${modulus}}\\).`,
-    };
+      answer,
+      hints: [
+        `Formula: \\(${base}^{${exponent}} \\bmod ${modulus}\\). Reduce after each multiplication: \\(r_{k+1}\\equiv r_k\\cdot${base}\\pmod{${modulus}}\\).`,
+        `Setup: start with \\(r_0=1\\), then multiply by \\(${base}\\) exactly \\(${exponent}\\) times, reducing modulo \\(${modulus}\\) each time.`,
+        `Final path: repeated squaring gives the needed reduced powers; combine them to get \\(${answer}\\).`,
+      ],
+      solution: `Using modular reduction, \\(${base}^{${exponent}}\\equiv${answer}\\pmod{${modulus}}\\), so the remainder is \\(${answer}\\).`,
+    });
   }
   if (variant === 1) {
     const a = 40 + (step * 3);
     const b = 30 + (step * 2);
-    return {
+    const divisor = gcd(a, b);
+    const answer = (a * b) - divisor;
+    return createOneHintQuestion({
       question: `What is ${a} times ${b} minus their greatest common divisor?`,
-      answer: String((a * b) - gcd(a, b)),
-      formulaHint: `Calculate \\(${a}\\cdot${b}-\\gcd(${a},${b})\\). Use Euclid's rule: \\(\\gcd(a,b)=\\gcd(b, a \\bmod b)\\).`,
-    };
+      answer,
+      hints: [
+        `Formula: \\(${a}\\cdot${b}-\\gcd(${a},${b})\\). Use \\(\\gcd(a,b)=\\gcd(b,a\\bmod b)\\).`,
+        `Setup: Euclid's algorithm gives \\(\\gcd(${a},${b})=${divisor}\\).`,
+        `Final path: \\(${a}\\cdot${b}=${a * b}\\), then subtract \\(${divisor}\\).`,
+      ],
+      solution: `\\(${a}\\cdot${b}-\\gcd(${a},${b})=${a * b}-${divisor}=${answer}\\).`,
+    });
   }
   if (variant === 2) {
     const n = 6 + step;
-    return {
+    const answer = n * (n - 1) * (n - 2);
+    return createOneHintQuestion({
       question: `What is ${n} factorial divided by ${n - 3} factorial?`,
-      answer: String(n * (n - 1) * (n - 2)),
-      formulaHint: `Cancel the factorials: \\(\\dfrac{${n}!}{${n - 3}!}=${n}\\cdot${n - 1}\\cdot${n - 2}\\).`,
-    };
+      answer,
+      hints: [
+        `Formula: \\(\\dfrac{${n}!}{${n - 3}!}\\).`,
+        `Setup: cancel every factor from \\(${n - 3}!\\) downward.`,
+        `Final path: \\(${n}\\cdot${n - 1}\\cdot${n - 2}\\).`,
+      ],
+      solution: `\\(\\dfrac{${n}!}{${n - 3}!}=${n}\\cdot${n - 1}\\cdot${n - 2}=${answer}\\).`,
+    });
   }
   if (variant === 3) {
     const n = 4 + step;
-    return {
+    const answer = catalan(n);
+    return createOneHintQuestion({
       question: `What is the ${n}th Catalan number?`,
-      answer: String(catalan(n)),
-      formulaHint: `Use the Catalan formula: \\(C_n=\\dfrac{(2n)!}{(n+1)!\\,n!}\\). Here \\(n=${n}\\).`,
-    };
+      answer,
+      hints: [
+        `Formula: \\(C_n=\\dfrac{(2n)!}{(n+1)!\\,n!}\\).`,
+        `Setup: substitute \\(n=${n}\\): \\(C_${n}=\\dfrac{${2 * n}!}{${n + 1}!\\,${n}!}\\).`,
+        `Final path: reduce the factorial fraction carefully before multiplying.`,
+      ],
+      solution: `\\(C_${n}=\\dfrac{${2 * n}!}{${n + 1}!\\,${n}!}=${answer}\\).`,
+    });
   }
-  const a = 18 + step;
-  const b = 12 + (step % 17);
-  return {
-    question: `What is ${a} squared plus ${b} cubed?`,
-    answer: String((a * a) + (b ** 3)),
-    formulaHint: `Calculate \\(${a}^2+${b}^3\\). Expanded: \\(${a}\\cdot${a}+${b}\\cdot${b}\\cdot${b}\\).`,
-  };
+  if (variant === 4) {
+    const a = 18 + step;
+    const b = 12 + (step % 17);
+    const answer = (a * a) + (b ** 3);
+    return createOneHintQuestion({
+      question: `What is ${a} squared plus ${b} cubed?`,
+      answer,
+      hints: [
+        `Formula: \\(${a}^2+${b}^3\\).`,
+        `Setup: \\(${a}^2=${a * a}\\) and \\(${b}^3=${b ** 3}\\).`,
+        `Final path: add \\(${a * a}\\) and \\(${b ** 3}\\).`,
+      ],
+      solution: `\\(${a}^2+${b}^3=${a * a}+${b ** 3}=${answer}\\).`,
+    });
+  }
+  if (variant === 5) {
+    const n = 14 + (step % 7);
+    const r = 5;
+    const answer = combination(n, r);
+    return createOneHintQuestion({
+      question: `How many ways can you choose ${r} objects from ${n} objects?`,
+      answer,
+      hints: [
+        `Formula: \\(\\binom{n}{r}=\\dfrac{n!}{r!(n-r)!}\\).`,
+        `Setup: \\(\\binom{${n}}{${r}}=\\dfrac{${n}!}{${r}!\\,${n - r}!}\\).`,
+        `Final path: cancel to \\(\\dfrac{${n}\\cdot${n - 1}\\cdot${n - 2}\\cdot${n - 3}\\cdot${n - 4}}{${r}!}\\).`,
+      ],
+      solution: `\\(\\binom{${n}}{${r}}=${answer}\\).`,
+    });
+  }
+  if (variant === 6) {
+    const first = 8 + step;
+    const ratio = 2 + (step % 3);
+    const n = 6;
+    const answer = first * ((ratio ** n) - 1) / (ratio - 1);
+    return createOneHintQuestion({
+      question: `What is the sum of the first ${n} terms of a geometric sequence starting at ${first} with ratio ${ratio}?`,
+      answer,
+      hints: [
+        `Formula: \\(S_n=a\\dfrac{r^n-1}{r-1}\\).`,
+        `Setup: \\(S_${n}=${first}\\dfrac{${ratio}^${n}-1}{${ratio}-1}\\).`,
+        `Final path: compute \\(${ratio}^${n}\\), subtract \\(1\\), then multiply by \\(${first}\\) and divide by \\(${ratio - 1}\\).`,
+      ],
+      solution: `\\(S_${n}=${first}\\dfrac{${ratio}^${n}-1}{${ratio}-1}=${answer}\\).`,
+    });
+  }
+  const a = 9 + (step % 13);
+  const m = [31, 37, 41, 43, 47, 53, 59][step % 7];
+  const answer = modInverse(a, m);
+  return createOneHintQuestion({
+    question: `What is the modular inverse of ${a} modulo ${m}?`,
+    answer,
+    hints: [
+      `Formula: find \\(x\\) where \\(${a}x\\equiv1\\pmod{${m}}\\).`,
+      `Setup: test multiples of \\(${a}\\) or use the extended Euclidean algorithm.`,
+      `Final path: the inverse is the number that makes \\(${a}x-1\\) divisible by \\(${m}\\).`,
+    ],
+    solution: `\\(${a}\\cdot${answer}\\equiv1\\pmod{${m}}\\), so the modular inverse is \\(${answer}\\).`,
+  });
 }
 
 function buildImpossibleOneHintQuestion(index) {
-  const variant = index % 5;
-  const step = Math.floor(index / 5);
+  const variant = index % 8;
+  const step = Math.floor(index / 8);
   if (variant === 0) {
     const n = 9 + step;
-    return {
+    const answer = catalan(n);
+    return createOneHintQuestion({
       question: `What is the ${n}th Catalan number?`,
-      answer: String(catalan(n)),
-      formulaHint: `Use the Catalan formula: \\(C_n=\\dfrac{(2n)!}{(n+1)!\\,n!}\\). Here \\(n=${n}\\).`,
-    };
+      answer,
+      hints: [
+        `Formula: \\(C_n=\\dfrac{(2n)!}{(n+1)!\\,n!}\\).`,
+        `Setup: \\(C_${n}=\\dfrac{${2 * n}!}{${n + 1}!\\,${n}!}\\).`,
+        `Final path: cancel the factorials before multiplying; the reduced value is \\(${answer}\\).`,
+      ],
+      solution: `\\(C_${n}=\\dfrac{${2 * n}!}{${n + 1}!\\,${n}!}=${answer}\\).`,
+    });
   }
   if (variant === 1) {
     const a = 12 + step;
     const b = 10 + (step % 19);
     const c = 7 + (step % 14);
-    return {
+    const answer = (a ** 4) - (b ** 3) + (c * c);
+    return createOneHintQuestion({
       question: `What is ${a} to the 4th power minus ${b} cubed plus ${c} squared?`,
-      answer: String((a ** 4) - (b ** 3) + (c * c)),
-      formulaHint: `Calculate \\(${a}^4-${b}^3+${c}^2\\). Break it into \\((${a}^2)^2-(${b}\\cdot${b}\\cdot${b})+${c}^2\\).`,
-    };
+      answer,
+      hints: [
+        `Formula: \\(${a}^4-${b}^3+${c}^2\\).`,
+        `Setup: \\(${a}^4=(${a}^2)^2\\), \\(${b}^3=${b}\\cdot${b}\\cdot${b}\\), and \\(${c}^2=${c * c}\\).`,
+        `Final path: combine \\(${a ** 4}\\), \\(-${b ** 3}\\), and \\(${c * c}\\).`,
+      ],
+      solution: `\\(${a}^4-${b}^3+${c}^2=${a ** 4}-${b ** 3}+${c * c}=${answer}\\).`,
+    });
   }
   if (variant === 2) {
     const n = 25 + step;
-    return {
+    const answer = totient(n * n);
+    return createOneHintQuestion({
       question: `What is Euler's totient of ${n} squared?`,
-      answer: String(totient(n * n)),
-      formulaHint: `Use Euler's product formula: \\(\\varphi(N)=N\\prod_{p\\mid N}\\left(1-\\dfrac{1}{p}\\right)\\). Here \\(N=${n}^2\\).`,
-    };
+      answer,
+      hints: [
+        `Formula: \\(\\varphi(N)=N\\prod_{p\\mid N}\\left(1-\\dfrac{1}{p}\\right)\\).`,
+        `Setup: use \\(N=${n}^2\\), then list the distinct prime factors of \\(${n}\\).`,
+        `Final path: square \\(${n}\\), then multiply by \\(1-1/p\\) for each distinct prime \\(p\\).`,
+      ],
+      solution: `\\(\\varphi(${n}^2)=\\varphi(${n * n})=${answer}\\).`,
+    });
   }
   if (variant === 3) {
     const n = 7 + step;
-    return {
+    const answer = derangements(n);
+    return createOneHintQuestion({
       question: `How many derangements are there of ${n} objects?`,
-      answer: String(derangements(n)),
-      formulaHint: `Use the derangement recurrence: \\(!n=(n-1)\\big(!(n-1)+!(n-2)\\big)\\), with \\(!1=0\\) and \\(!2=1\\). Here \\(n=${n}\\).`,
-    };
+      answer,
+      hints: [
+        `Formula: \\(!n=(n-1)\\big(!(n-1)+!(n-2)\\big)\\).`,
+        `Setup: start from \\(!1=0\\) and \\(!2=1\\), then build upward to \\(!${n}\\).`,
+        `Final path: apply the recurrence one row at a time until \\(n=${n}\\).`,
+      ],
+      solution: `Using \\(!n=(n-1)(!(n-1)+!(n-2))\\), \\(!${n}=${answer}\\).`,
+    });
   }
-  const a = 19 + step;
-  const b = 11 + (step % 13);
-  const m = 101 + (step * 6);
-  return {
-    question: `What is the remainder when ${a} to the ${b} power is divided by ${m}?`,
-    answer: String(modPow(a, b, m)),
-    formulaHint: `Use repeated squaring for \\(${a}^{${b}} \\bmod ${m}\\): \\(a^{2k}\\equiv (a^k)^2 \\pmod{${m}}\\), reducing after every square and multiply.`,
-  };
+  if (variant === 4) {
+    const a = 19 + step;
+    const b = 11 + (step % 13);
+    const m = 101 + (step * 6);
+    const answer = modPow(a, b, m);
+    return createOneHintQuestion({
+      question: `What is the remainder when ${a} to the ${b} power is divided by ${m}?`,
+      answer,
+      hints: [
+        `Formula: compute \\(${a}^{${b}}\\bmod ${m}\\).`,
+        `Setup: use repeated squaring: \\(a^{2k}\\equiv(a^k)^2\\pmod{${m}}\\).`,
+        `Final path: write \\(${b}\\) as a sum of powers of \\(2\\), then multiply those reduced powers.`,
+      ],
+      solution: `Repeated squaring gives \\(${a}^{${b}}\\equiv${answer}\\pmod{${m}}\\).`,
+    });
+  }
+  if (variant === 5) {
+    const n = 16 + (step % 7);
+    const r = 6;
+    const answer = combination(n, r);
+    return createOneHintQuestion({
+      question: `How many ways can you choose ${r} objects from ${n} objects?`,
+      answer,
+      hints: [
+        `Formula: \\(\\binom{n}{r}=\\dfrac{n!}{r!(n-r)!}\\).`,
+        `Setup: \\(\\binom{${n}}{${r}}=\\dfrac{${n}!}{${r}!\\,${n - r}!}\\).`,
+        `Final path: cancel \\(${n - r}!\\), then divide the remaining product by \\(${r}!\\).`,
+      ],
+      solution: `\\(\\binom{${n}}{${r}}=${answer}\\).`,
+    });
+  }
+  if (variant === 6) {
+    const n = 84 + step;
+    const answer = divisorCount(n);
+    return createOneHintQuestion({
+      question: `How many positive divisors does ${n} have?`,
+      answer,
+      hints: [
+        `Formula: if \\(N=\\prod p_i^{e_i}\\), then \\(d(N)=\\prod(e_i+1)\\).`,
+        `Setup: prime-factorize \\(${n}\\), then read the exponents.`,
+        `Final path: add \\(1\\) to every exponent and multiply those numbers.`,
+      ],
+      solution: `For \\(${n}\\), the divisor-count formula gives \\(d(${n})=${answer}\\).`,
+    });
+  }
+  const first = 5 + step;
+  const difference = 4 + (step % 7);
+  const n = 18 + (step % 6);
+  const answer = (n * ((2 * first) + ((n - 1) * difference))) / 2;
+  return createOneHintQuestion({
+    question: `What is the sum of the first ${n} terms of an arithmetic sequence starting at ${first} with difference ${difference}?`,
+    answer,
+    hints: [
+      `Formula: \\(S_n=\\dfrac{n}{2}\\big(2a_1+(n-1)d\\big)\\).`,
+      `Setup: \\(S_${n}=\\dfrac{${n}}{2}\\big(2\\cdot${first}+(${n}-1)\\cdot${difference}\\big)\\).`,
+      `Final path: compute the expression inside parentheses first, then multiply by \\(${n}/2\\).`,
+    ],
+    solution: `\\(S_${n}=\\dfrac{${n}}{2}\\big(2\\cdot${first}+(${n}-1)\\cdot${difference}\\big)=${answer}\\).`,
+  });
 }
 
 function gcd(a, b) {
@@ -873,6 +1191,75 @@ function gcd(a, b) {
 
 function lcm(a, b) {
   return Math.abs(a * b) / gcd(a, b);
+}
+
+function combination(n, r) {
+  const k = Math.min(r, n - r);
+  let numerator = 1n;
+  let denominator = 1n;
+  for (let index = 1; index <= k; index += 1) {
+    numerator *= BigInt(n - k + index);
+    denominator *= BigInt(index);
+  }
+  return numerator / denominator;
+}
+
+function primeFactors(n) {
+  const factors = [];
+  let remainder = n;
+  for (let factor = 2; factor * factor <= remainder; factor += 1) {
+    while (remainder % factor === 0) {
+      factors.push(factor);
+      remainder /= factor;
+    }
+  }
+  if (remainder > 1) {
+    factors.push(remainder);
+  }
+  return factors;
+}
+
+function primeFactorSum(n) {
+  return primeFactors(n).reduce((total, factor) => total + factor, 0);
+}
+
+function divisorCount(n) {
+  let count = 1;
+  let remainder = n;
+  for (let factor = 2; factor * factor <= remainder; factor += 1) {
+    if (remainder % factor !== 0) {
+      continue;
+    }
+    let exponent = 0;
+    while (remainder % factor === 0) {
+      exponent += 1;
+      remainder /= factor;
+    }
+    count *= exponent + 1;
+  }
+  if (remainder > 1) {
+    count *= 2;
+  }
+  return count;
+}
+
+function modInverse(value, modulus) {
+  let previousRemainder = modulus;
+  let remainder = ((value % modulus) + modulus) % modulus;
+  let previousCoefficient = 0;
+  let coefficient = 1;
+
+  while (remainder > 0) {
+    const quotient = Math.floor(previousRemainder / remainder);
+    [previousRemainder, remainder] = [remainder, previousRemainder - (quotient * remainder)];
+    [previousCoefficient, coefficient] = [coefficient, previousCoefficient - (quotient * coefficient)];
+  }
+
+  if (previousRemainder !== 1) {
+    return 0;
+  }
+
+  return ((previousCoefficient % modulus) + modulus) % modulus;
 }
 
 function fibonacci(n) {
@@ -1623,26 +2010,98 @@ function getOneHintProgressKey(difficulty = currentOneHintDifficulty) {
   return `${ONE_HINT_PROGRESS_STORAGE_PREFIX}:${playerId}:${playerName}:${difficulty}`;
 }
 
+function getOneHintStreakKey(difficulty = currentOneHintDifficulty) {
+  const playerId = currentUser?.uid || GUEST_UID;
+  const playerName = currentUsername || "player";
+  return `${ONE_HINT_STREAK_STORAGE_PREFIX}:${playerId}:${playerName}:${difficulty}`;
+}
+
 function getInitialOneHintQuestionIndex(difficulty = currentOneHintDifficulty) {
   const playerSeed = `${currentUser?.uid || GUEST_UID}:${currentUsername || "player"}`;
   return hashString(`${playerSeed}:one-hint:${difficulty}`) % 20;
 }
 
-function loadOneHintQuestionIndex(difficulty = currentOneHintDifficulty) {
+function createDefaultOneHintProgress(difficulty = currentOneHintDifficulty) {
+  return {
+    index: getInitialOneHintQuestionIndex(difficulty),
+    attempts: 0,
+    hintLevel: 0,
+    solved: false,
+    currentInput: "",
+  };
+}
+
+function loadOneHintProgress(difficulty = currentOneHintDifficulty) {
   try {
-    const saved = Number(localStorage.getItem(getOneHintProgressKey(difficulty)));
-    return Number.isSafeInteger(saved) && saved >= 0 ? saved : getInitialOneHintQuestionIndex(difficulty);
+    const raw = localStorage.getItem(getOneHintProgressKey(difficulty));
+    if (!raw) {
+      return createDefaultOneHintProgress(difficulty);
+    }
+
+    const migratedIndex = Number(raw);
+    if (Number.isSafeInteger(migratedIndex) && migratedIndex >= 0) {
+      return { ...createDefaultOneHintProgress(difficulty), index: migratedIndex };
+    }
+
+    const saved = JSON.parse(raw);
+    const fallback = createDefaultOneHintProgress(difficulty);
+    return {
+      index: Number.isSafeInteger(saved.index) && saved.index >= 0 ? saved.index : fallback.index,
+      attempts: Number.isSafeInteger(saved.attempts) && saved.attempts >= 0 ? saved.attempts : 0,
+      hintLevel: Number.isSafeInteger(saved.hintLevel) && saved.hintLevel >= 0 ? saved.hintLevel : 0,
+      solved: Boolean(saved.solved),
+      currentInput: typeof saved.currentInput === "string" ? saved.currentInput.replace(/\D/g, "") : "",
+    };
   } catch {
-    return getInitialOneHintQuestionIndex(difficulty);
+    return createDefaultOneHintProgress(difficulty);
   }
 }
 
-function saveOneHintQuestionIndex(difficulty = currentOneHintDifficulty, index = oneHintQuestionIndex) {
+function saveOneHintProgress(difficulty = currentOneHintDifficulty) {
   try {
-    localStorage.setItem(getOneHintProgressKey(difficulty), String(index));
+    localStorage.setItem(getOneHintProgressKey(difficulty), JSON.stringify({
+      index: oneHintQuestionIndex,
+      attempts: oneHintAttempts,
+      hintLevel: oneHintHintLevel,
+      solved: oneHintSolved,
+      currentInput: oneHintSolved ? "" : dom.oneHintInput.value,
+    }));
   } catch {
     // One Hint can still generate fresh clues if storage is unavailable.
   }
+}
+
+function loadOneHintStreak(difficulty = currentOneHintDifficulty) {
+  try {
+    const saved = JSON.parse(localStorage.getItem(getOneHintStreakKey(difficulty)) || "{}");
+    return {
+      current: Number.isSafeInteger(saved.current) && saved.current >= 0 ? saved.current : 0,
+      best: Number.isSafeInteger(saved.best) && saved.best >= 0 ? saved.best : 0,
+    };
+  } catch {
+    return { current: 0, best: 0 };
+  }
+}
+
+function saveOneHintStreak(streak, difficulty = currentOneHintDifficulty) {
+  try {
+    localStorage.setItem(getOneHintStreakKey(difficulty), JSON.stringify(streak));
+  } catch {
+    // Streaks are a nice-to-have; gameplay should continue without storage.
+  }
+}
+
+function resetOneHintStreak(difficulty = currentOneHintDifficulty) {
+  const streak = loadOneHintStreak(difficulty);
+  saveOneHintStreak({ current: 0, best: streak.best }, difficulty);
+}
+
+function recordOneHintSolvedStreak(difficulty = currentOneHintDifficulty) {
+  const streak = loadOneHintStreak(difficulty);
+  const current = streak.current + 1;
+  const next = { current, best: Math.max(streak.best, current) };
+  saveOneHintStreak(next, difficulty);
+  return next;
 }
 
 function getCurrentOneHintQuestion() {
@@ -1650,8 +2109,20 @@ function getCurrentOneHintQuestion() {
   return currentOneHintQuestion || config.buildQuestion(oneHintQuestionIndex);
 }
 
-function supportsOneHintFormulaHint() {
-  return currentOneHintDifficulty === "insane" || currentOneHintDifficulty === "impossible";
+function getOneHintScore(attempts = oneHintAttempts, hintLevel = oneHintHintLevel) {
+  return Math.max(10, ONE_HINT_MAX_SCORE - (attempts * ONE_HINT_ATTEMPT_PENALTY) - (hintLevel * ONE_HINT_HINT_PENALTY));
+}
+
+function getOneHintHints(question = getCurrentOneHintQuestion()) {
+  if (Array.isArray(question.hints)) {
+    return question.hints;
+  }
+
+  return question.formulaHint ? [question.formulaHint] : [];
+}
+
+function supportsOneHintFormulaHint(question = getCurrentOneHintQuestion()) {
+  return getOneHintHints(question).length > 0;
 }
 
 function hideOneHintFormulaHint() {
@@ -1660,22 +2131,29 @@ function hideOneHintFormulaHint() {
 }
 
 function updateOneHintFormulaHintUi(question = getCurrentOneHintQuestion()) {
-  const canShowHint = supportsOneHintFormulaHint() && Boolean(question.formulaHint);
+  const hints = getOneHintHints(question);
+  const canShowHint = hints.length > 0 && oneHintHintLevel < hints.length;
   dom.oneHintFormulaBtn.hidden = !canShowHint;
   dom.oneHintFormulaBtn.disabled = !canShowHint || oneHintSolved || !currentUser || !currentUsername;
+  dom.oneHintFormulaBtn.textContent = `Hint ${Math.min(oneHintHintLevel + 1, hints.length)}${oneHintHintLevel > 0 ? ` / ${hints.length}` : ""}`;
   if (!canShowHint) {
-    hideOneHintFormulaHint();
+    dom.oneHintFormulaBtn.hidden = hints.length === 0;
   }
 }
 
 function showOneHintFormulaHint() {
   const currentQuestion = getCurrentOneHintQuestion();
-  if (!supportsOneHintFormulaHint() || !currentQuestion.formulaHint) {
+  const hints = getOneHintHints(currentQuestion);
+  if (!supportsOneHintFormulaHint(currentQuestion) || oneHintHintLevel >= hints.length) {
     return;
   }
 
-  dom.oneHintFormulaHint.textContent = currentQuestion.formulaHint;
+  oneHintHintLevel += 1;
+  dom.oneHintFormulaHint.textContent = hints.slice(0, oneHintHintLevel).join("\n\n");
   dom.oneHintFormulaHint.hidden = false;
+  updateOneHintStatsUi();
+  updateOneHintFormulaHintUi(currentQuestion);
+  saveOneHintProgress();
   typesetFormulaHint();
 }
 
@@ -1690,6 +2168,35 @@ function typesetFormulaHint() {
   });
 }
 
+function updateOneHintStatsUi() {
+  const streak = loadOneHintStreak();
+  dom.oneHintAttemptBadge.textContent = `${oneHintAttempts} ${oneHintAttempts === 1 ? "try" : "tries"}`;
+  dom.oneHintScoreBadge.textContent = `${getOneHintScore()} pts`;
+  dom.oneHintStreakBadge.textContent = `${streak.current} streak · best ${streak.best}`;
+}
+
+function hideOneHintSolution() {
+  dom.oneHintSolution.textContent = "";
+  dom.oneHintSolution.hidden = true;
+}
+
+function showOneHintSolution(question = getCurrentOneHintQuestion()) {
+  dom.oneHintSolution.innerHTML = "";
+  const title = document.createElement("p");
+  title.textContent = `Worked solution · ${getOneHintScore()} pts`;
+  const body = document.createElement("p");
+  body.textContent = question.solution;
+  dom.oneHintSolution.append(title, body);
+  dom.oneHintSolution.hidden = false;
+
+  const mathJax = window.MathJax;
+  if (mathJax?.typesetPromise) {
+    mathJax.typesetPromise([dom.oneHintSolution]).catch(() => {
+      // The plain solution remains readable if MathJax cannot render.
+    });
+  }
+}
+
 function initializeOneHintQuestionForPlayer() {
   if (oneHintInitialized) {
     return true;
@@ -1699,11 +2206,14 @@ function initializeOneHintQuestionForPlayer() {
     return false;
   }
 
-  oneHintQuestionIndex = loadOneHintQuestionIndex(currentOneHintDifficulty);
+  const saved = loadOneHintProgress(currentOneHintDifficulty);
+  oneHintQuestionIndex = saved.index;
   currentOneHintQuestion = getOneHintDifficultyConfig().buildQuestion(oneHintQuestionIndex);
-  oneHintAttempts = 0;
-  oneHintSolved = false;
+  oneHintAttempts = saved.attempts;
+  oneHintHintLevel = Math.min(saved.hintLevel, getOneHintHints(currentOneHintQuestion).length);
+  oneHintSolved = saved.solved;
   oneHintInitialized = true;
+  dom.oneHintInput.value = saved.currentInput.slice(0, currentOneHintQuestion.answer.length);
   return true;
 }
 
@@ -1722,34 +2232,56 @@ function renderOneHintQuestion() {
     dom.oneHintInput.placeholder = "Answer";
     dom.oneHintFeedback.textContent = "Use the clue. This mode only says correct or wrong.";
     dom.oneHintFeedback.className = "one-hint-feedback";
-    dom.oneHintAttemptBadge.textContent = "0 tries";
+    oneHintAttempts = 0;
+    oneHintHintLevel = 0;
+    updateOneHintStatsUi();
     dom.oneHintInput.disabled = true;
     dom.oneHintSubmitBtn.disabled = true;
     updateOneHintFormulaHintUi({ formulaHint: "" });
+    hideOneHintSolution();
     return;
   }
 
   const currentQuestion = getCurrentOneHintQuestion();
   dom.oneHintQuestion.textContent = currentQuestion.question;
-  dom.oneHintInput.value = "";
+  if (oneHintSolved) {
+    dom.oneHintInput.value = "";
+  }
   dom.oneHintInput.maxLength = String(Math.max(1, currentQuestion.answer.length));
   dom.oneHintInput.placeholder = "Answer";
-  dom.oneHintFeedback.textContent = "Use the clue. This mode only says correct or wrong.";
+  dom.oneHintFeedback.textContent = oneHintSolved ? "Correct." : "Use the clue. This mode only says correct or wrong.";
   dom.oneHintFeedback.className = "one-hint-feedback";
-  dom.oneHintAttemptBadge.textContent = `${oneHintAttempts} ${oneHintAttempts === 1 ? "try" : "tries"}`;
+  dom.oneHintFeedback.classList.toggle("is-correct", oneHintSolved);
+  updateOneHintStatsUi();
   dom.oneHintInput.disabled = oneHintSolved || !currentUser || !currentUsername;
   dom.oneHintSubmitBtn.disabled = oneHintSolved || !currentUser || !currentUsername;
-  hideOneHintFormulaHint();
+  if (oneHintHintLevel > 0) {
+    dom.oneHintFormulaHint.textContent = getOneHintHints(currentQuestion).slice(0, oneHintHintLevel).join("\n\n");
+    dom.oneHintFormulaHint.hidden = false;
+    typesetFormulaHint();
+  } else {
+    hideOneHintFormulaHint();
+  }
+  if (oneHintSolved) {
+    showOneHintSolution(currentQuestion);
+  } else {
+    hideOneHintSolution();
+  }
   updateOneHintFormulaHintUi(currentQuestion);
 }
 
 function startNewOneHintQuestion() {
   initializeOneHintQuestionForPlayer();
+  if (!oneHintSolved && oneHintAttempts > 0) {
+    resetOneHintStreak();
+  }
   oneHintQuestionIndex += 1;
   currentOneHintQuestion = getOneHintDifficultyConfig().buildQuestion(oneHintQuestionIndex);
-  saveOneHintQuestionIndex(currentOneHintDifficulty, oneHintQuestionIndex);
   oneHintAttempts = 0;
+  oneHintHintLevel = 0;
   oneHintSolved = false;
+  dom.oneHintInput.value = "";
+  saveOneHintProgress();
   renderOneHintQuestion();
   dom.oneHintInput.focus();
 }
@@ -1768,6 +2300,7 @@ function handleOneHintModeClick(event) {
   oneHintInitialized = false;
   currentOneHintQuestion = null;
   oneHintAttempts = 0;
+  oneHintHintLevel = 0;
   oneHintSolved = false;
   renderOneHintQuestion();
   dom.oneHintInput.focus();
@@ -1778,6 +2311,7 @@ function handleOneHintInput() {
   if (dom.oneHintInput.value !== sanitized) {
     dom.oneHintInput.value = sanitized;
   }
+  saveOneHintProgress();
 }
 
 function handleOneHintSubmit(event) {
@@ -1797,21 +2331,26 @@ function handleOneHintSubmit(event) {
   }
 
   oneHintAttempts += 1;
-  dom.oneHintAttemptBadge.textContent = `${oneHintAttempts} ${oneHintAttempts === 1 ? "try" : "tries"}`;
+  updateOneHintStatsUi();
 
   if (guess === answer) {
     oneHintSolved = true;
-    dom.oneHintFeedback.textContent = "Correct.";
+    recordOneHintSolvedStreak();
+    updateOneHintStatsUi();
+    dom.oneHintFeedback.textContent = `Correct. Score: ${getOneHintScore()} pts.`;
     dom.oneHintFeedback.className = "one-hint-feedback is-correct";
     dom.oneHintInput.disabled = true;
     dom.oneHintSubmitBtn.disabled = true;
     updateOneHintFormulaHintUi();
+    showOneHintSolution();
+    saveOneHintProgress();
     return;
   }
 
   dom.oneHintFeedback.textContent = "Wrong. Try again.";
   dom.oneHintFeedback.className = "one-hint-feedback is-wrong";
   dom.oneHintInput.value = "";
+  saveOneHintProgress();
   dom.oneHintInput.focus();
 }
 
