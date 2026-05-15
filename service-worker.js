@@ -1,4 +1,4 @@
-const CACHE_NAME = "three-digit-duel-v3";
+const CACHE_NAME = "three-digit-duel-v4";
 const APP_SHELL = [
   "/",
   "/signin",
