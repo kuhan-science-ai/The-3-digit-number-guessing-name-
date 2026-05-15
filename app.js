@@ -35,6 +35,7 @@ const GAME_STORAGE_PREFIX = "number-guessing-game-state-v3";
 const PROFILE_STORAGE_PREFIX = "number-guessing-game-profile-v1";
 const LEADERBOARD_STORAGE_PREFIX = "number-guessing-game-leaderboard-v1";
 const GLOBAL_PLAYER_STORAGE_KEY = "number-guessing-game-global-player-v1";
+const GLOBAL_LEADERBOARD_CACHE_PREFIX = "number-guessing-game-global-leaderboard-cache-v1";
 const GLOBAL_LEADERBOARD_COLLECTION = "leaderboardScores";
 const DAILY_ATTEMPT_STORAGE_PREFIX = "number-guessing-game-daily-attempt-v1";
 const SETTINGS_STORAGE_KEY = "number-guessing-game-settings-v1";
@@ -2712,8 +2713,38 @@ function loadLeaderboardScores(mode = currentMode, daily = isDailyChallenge) {
   }
 }
 
+function sortLeaderboardScores(scores) {
+  return [...scores].sort((left, right) => left.attempts - right.attempts || left.seconds - right.seconds);
+}
+
+function upsertBestLeaderboardScore(scores, score) {
+  const playerId = score.playerId || `name:${sanitizeUsername(score.username).toLowerCase()}`;
+  const nextScores = scores.filter((entry) => {
+    const entryPlayerId = entry.playerId || `name:${sanitizeUsername(entry.username).toLowerCase()}`;
+    return entryPlayerId !== playerId;
+  });
+  const previousScore = scores.find((entry) => {
+    const entryPlayerId = entry.playerId || `name:${sanitizeUsername(entry.username).toLowerCase()}`;
+    return entryPlayerId === playerId;
+  });
+
+  nextScores.push(isBetterLeaderboardScore(score, previousScore) ? score : previousScore);
+  return sortLeaderboardScores(nextScores);
+}
+
+function mergeLeaderboardScores(...scoreGroups) {
+  return scoreGroups
+    .flat()
+    .filter(Boolean)
+    .reduce((scores, score) => upsertBestLeaderboardScore(scores, score), []);
+}
+
 function getGlobalLeaderboardBoardKey(mode = currentMode, daily = isDailyChallenge) {
   return daily ? `daily:${getTodayKey()}:${mode}` : `regular:${mode}`;
+}
+
+function getGlobalLeaderboardCacheKey(mode = currentMode, daily = isDailyChallenge) {
+  return `${GLOBAL_LEADERBOARD_CACHE_PREFIX}:${getGlobalLeaderboardBoardKey(mode, daily)}`;
 }
 
 function getGlobalLeaderboardDocId(mode = currentMode, daily = isDailyChallenge, playerId = getGlobalPlayerId()) {
@@ -2734,6 +2765,30 @@ function isBetterLeaderboardScore(nextScore, previousScore) {
   return (Number(nextScore.seconds) || Number.MAX_SAFE_INTEGER) < (Number(previousScore.seconds) || Number.MAX_SAFE_INTEGER);
 }
 
+function loadCachedGlobalLeaderboardScores(mode = currentMode, daily = isDailyChallenge) {
+  try {
+    const raw = localStorage.getItem(getGlobalLeaderboardCacheKey(mode, daily));
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveCachedGlobalLeaderboardScores(scores, mode = currentMode, daily = isDailyChallenge) {
+  try {
+    localStorage.setItem(getGlobalLeaderboardCacheKey(mode, daily), JSON.stringify(sortLeaderboardScores(scores).slice(0, 20)));
+  } catch {
+    // Global cache is only for instant UI feedback.
+  }
+}
+
+function cacheGlobalLeaderboardScore(score) {
+  const scores = loadCachedGlobalLeaderboardScores(score.mode, score.daily);
+  const nextScores = upsertBestLeaderboardScore(scores, score).slice(0, 20);
+  saveCachedGlobalLeaderboardScores(nextScores, score.mode, score.daily);
+  return nextScores;
+}
+
 function withTimeout(promise, milliseconds, message) {
   let timeoutId;
   const timeout = new Promise((_, reject) => {
@@ -2747,11 +2802,16 @@ function withTimeout(promise, milliseconds, message) {
 
 async function recordGlobalLeaderboardScore(score) {
   const playerId = getGlobalPlayerId();
+  const cachedScore = { ...score, playerId };
+  cacheGlobalLeaderboardScore(cachedScore);
+  if (activeLeaderboardScope === "global") {
+    renderLeaderboard();
+  }
+
   const docId = getGlobalLeaderboardDocId(score.mode, score.daily, playerId);
   const scoreRef = doc(db, GLOBAL_LEADERBOARD_COLLECTION, docId);
   const nextScore = {
-    ...score,
-    playerId,
+    ...cachedScore,
     boardKey: getGlobalLeaderboardBoardKey(score.mode, score.daily),
     updatedAt: serverTimestamp(),
   };
@@ -2765,7 +2825,6 @@ async function recordGlobalLeaderboardScore(score) {
     await withTimeout(setDoc(scoreRef, nextScore), 8000, "Global leaderboard save timed out.");
   } catch (error) {
     console.warn("Global leaderboard save failed:", error);
-    setStatus("Local score saved. Global leaderboard could not be updated right now.", "status-hint");
   }
 }
 
@@ -2777,20 +2836,17 @@ async function loadGlobalLeaderboardScores(mode = currentMode, daily = isDailyCh
   );
 
   const snapshot = await withTimeout(getDocs(scoresQuery), 8000, "Global leaderboard load timed out.");
-  return snapshot.docs
+  const remoteScores = snapshot.docs
     .map((entry) => entry.data())
     .sort((left, right) => left.attempts - right.attempts || left.seconds - right.seconds)
     .slice(0, 20);
+  const scores = mergeLeaderboardScores(loadCachedGlobalLeaderboardScores(mode, daily), remoteScores).slice(0, 20);
+  saveCachedGlobalLeaderboardScores(scores, mode, daily);
+  return scores;
 }
 
 function recordLeaderboardScore(totalAttempts, elapsedSeconds) {
   const playerId = getPlayerLeaderboardId();
-  const scores = loadLeaderboardScores(currentMode, isDailyChallenge)
-    .filter((score) => {
-      const scorePlayerId = score.playerId || `name:${sanitizeUsername(score.username).toLowerCase()}`;
-      return scorePlayerId !== playerId;
-    });
-
   const score = {
     playerId,
     username: currentUsername || "Player",
@@ -2801,9 +2857,7 @@ function recordLeaderboardScore(totalAttempts, elapsedSeconds) {
     date: new Date().toISOString(),
   };
 
-  scores.push(score);
-
-  scores.sort((left, right) => left.attempts - right.attempts || left.seconds - right.seconds);
+  const scores = upsertBestLeaderboardScore(loadLeaderboardScores(currentMode, isDailyChallenge), score);
   localStorage.setItem(getLeaderboardKey(currentMode, isDailyChallenge), JSON.stringify(scores.slice(0, 6)));
   if (isDailyChallenge) {
     saveDailyAttempt(currentMode, {
@@ -2817,11 +2871,7 @@ function recordLeaderboardScore(totalAttempts, elapsedSeconds) {
     });
     recordDailyStreak();
   }
-  recordGlobalLeaderboardScore(score).then(() => {
-    if (activeLeaderboardScope === "global") {
-      renderLeaderboard();
-    }
-  });
+  recordGlobalLeaderboardScore(score);
   renderLeaderboard();
 }
 
@@ -2928,10 +2978,17 @@ async function renderLeaderboard() {
     return;
   }
 
-  dom.leaderboardList.innerHTML = '<p class="empty-state">Loading global leaderboard. If it does not respond, your local scores are still saved.</p>';
+  const cachedScores = loadCachedGlobalLeaderboardScores(boardMode, boardDaily);
+  if (cachedScores.length) {
+    renderLeaderboardScores(cachedScores, boardMode, boardDaily);
+  } else {
+    dom.leaderboardList.innerHTML = '<p class="empty-state">Loading global leaderboard. If it does not respond, your local scores are still saved.</p>';
+  }
   const loadingTimeoutId = window.setTimeout(() => {
     if (renderToken === leaderboardRenderToken && activeLeaderboardScope === "global") {
-      dom.leaderboardList.innerHTML = '<p class="empty-state">Global leaderboard is taking too long to respond. Your local scores are still saved.</p>';
+      if (!cachedScores.length) {
+        dom.leaderboardList.innerHTML = '<p class="empty-state">Global leaderboard is taking too long to respond. Your local scores are still saved.</p>';
+      }
     }
   }, 9000);
   try {
@@ -2946,7 +3003,9 @@ async function renderLeaderboard() {
     window.clearTimeout(loadingTimeoutId);
     console.warn("Global leaderboard load failed:", error);
     if (renderToken === leaderboardRenderToken) {
-      dom.leaderboardList.innerHTML = '<p class="empty-state">Global leaderboard is unavailable right now. Your local scores are still saved.</p>';
+      if (!cachedScores.length) {
+        dom.leaderboardList.innerHTML = '<p class="empty-state">Global leaderboard is unavailable right now. Your local scores are still saved.</p>';
+      }
     }
   }
 }
