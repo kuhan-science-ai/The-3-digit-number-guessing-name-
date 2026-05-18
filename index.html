@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css?v=20260516-2" />
+  <link rel="stylesheet" href="./styles.css?v=20260518-premium-1" />
   <script>
     window.MathJax = {
       tex: {
@@ -62,6 +62,7 @@
           <small>Mode</small>
         </div>
       </div>
+      <p id="celebrationRank" class="celebration-rank">Score saved to Local and Global rankings.</p>
       <div class="celebration-actions">
         <button id="shareResultBtn" class="primary-btn" type="button">Share Result</button>
         <button id="celebrationCloseBtn" class="ghost-btn" type="button">Keep Playing</button>
@@ -165,9 +166,12 @@
 
         <section class="example-card">
           <p class="mini-label">Example clue · 💡</p>
-          <p class="example-line"><strong>Secret:</strong> 479</p>
-          <p class="example-line"><strong>Guess:</strong> 498</p>
-          <p class="example-hint">
+          <div class="interactive-example" aria-label="Interactive clue example">
+            <div><small>Secret</small><strong>479</strong></div>
+            <div><small>Guess</small><strong id="exampleGuessText">498</strong></div>
+            <button id="exampleCycleBtn" class="mini-ghost-btn" type="button">Try Next</button>
+          </div>
+          <p id="exampleHintText" class="example-hint">
             One digit is correct and one digit is correct but in the wrong place.
           </p>
         </section>
@@ -285,6 +289,25 @@
             <button id="focusModeBtn" class="mini-ghost-btn" type="button" aria-pressed="false">Focus Mode</button>
           </div>
 
+          <section class="command-center" aria-label="Current run summary">
+            <div>
+              <span>Mode</span>
+              <strong id="commandMode">Classic</strong>
+            </div>
+            <div>
+              <span>Attempts</span>
+              <strong id="commandAttempts">0</strong>
+            </div>
+            <div>
+              <span>Timer</span>
+              <strong id="commandTimer">0:00</strong>
+            </div>
+            <div>
+              <span>Rank</span>
+              <strong id="commandRank">Practice</strong>
+            </div>
+          </section>
+
           <section id="settingsPanel" class="settings-panel" hidden>
             <div class="tracker-top">
               <div>
@@ -314,6 +337,19 @@
                   <small>Small vibration on keypad and wins where supported.</small>
                 </span>
                 <input id="vibrationToggle" type="checkbox" />
+              </label>
+              <label class="setting-row setting-row-select">
+                <span>
+                  <strong>Visual theme</strong>
+                  <small>Change the board style without changing the layout.</small>
+                </span>
+                <select id="themeSelect" class="settings-select">
+                  <option value="classic">Classic</option>
+                  <option value="noir">Cipher Noir</option>
+                  <option value="arctic">Arctic Glass</option>
+                  <option value="gold">Gold Vault</option>
+                  <option value="minimal">Minimal Dark</option>
+                </select>
               </label>
               <label class="setting-row">
                 <span>
@@ -474,6 +510,11 @@
             <button type="button" class="mode-tab" data-one-hint-mode="insane">Insane</button>
             <button type="button" class="mode-tab" data-one-hint-mode="impossible">Impossible</button>
           </div>
+          <div id="oneHintSteps" class="one-hint-steps" aria-label="Hint steps">
+            <span data-hint-step="1">Formula</span>
+            <span data-hint-step="2">Setup</span>
+            <span data-hint-step="3">Final Path</span>
+          </div>
           <div class="tracker-top">
             <div>
               <p class="mini-label">Computer clue</p>
@@ -531,7 +572,7 @@
     </section>
   </main>
 
-  <script type="module" src="./app.js?v=20260516-2"></script>
+  <script type="module" src="./app.js?v=20260518-premium-1"></script>
 </body>
 </html>
 

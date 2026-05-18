@@ -59,7 +59,9 @@ const DEFAULT_SETTINGS = {
   beginnerHints: true,
   sound: false,
   vibration: true,
+  theme: "classic",
 };
+const THEME_CLASS_NAMES = ["theme-noir", "theme-arctic", "theme-gold", "theme-minimal"];
 const GAME_MODES = {
   classic: {
     label: "Classic",
@@ -133,6 +135,10 @@ const dom = {
   guessButton: document.getElementById("guessButton"),
   newGameBtn: document.getElementById("newGameBtn"),
   timerBadge: document.getElementById("timerBadge"),
+  commandMode: document.getElementById("commandMode"),
+  commandAttempts: document.getElementById("commandAttempts"),
+  commandTimer: document.getElementById("commandTimer"),
+  commandRank: document.getElementById("commandRank"),
   modeTabs: document.getElementById("modeTabs"),
   modeDescription: document.getElementById("modeDescription"),
   dailyChallengeBtn: document.getElementById("dailyChallengeBtn"),
@@ -157,6 +163,7 @@ const dom = {
   challengeOpponentInput: document.getElementById("challengeOpponentInput"),
   challengeMeta: document.getElementById("challengeMeta"),
   oneHintModeTabs: document.getElementById("oneHintModeTabs"),
+  oneHintSteps: document.getElementById("oneHintSteps"),
   oneHintForm: document.getElementById("oneHintForm"),
   oneHintQuestion: document.getElementById("oneHintQuestion"),
   oneHintInput: document.getElementById("oneHintInput"),
@@ -181,6 +188,7 @@ const dom = {
   beginnerHintsToggle: document.getElementById("beginnerHintsToggle"),
   soundToggle: document.getElementById("soundToggle"),
   vibrationToggle: document.getElementById("vibrationToggle"),
+  themeSelect: document.getElementById("themeSelect"),
   showTutorialBtn: document.getElementById("showTutorialBtn"),
   installAppBtn: document.getElementById("installAppBtn"),
   signOutBtn: document.getElementById("signOutBtn"),
@@ -197,6 +205,7 @@ const dom = {
   celebrationAttempts: document.getElementById("celebrationAttempts"),
   celebrationTime: document.getElementById("celebrationTime"),
   celebrationMode: document.getElementById("celebrationMode"),
+  celebrationRank: document.getElementById("celebrationRank"),
   shareResultBtn: document.getElementById("shareResultBtn"),
   celebrationCloseBtn: document.getElementById("celebrationCloseBtn"),
   usernameSetup: document.getElementById("usernameSetup"),
@@ -206,6 +215,9 @@ const dom = {
   tutorialOverlay: document.getElementById("tutorialOverlay"),
   tutorialStartBtn: document.getElementById("tutorialStartBtn"),
   tutorialSkipBtn: document.getElementById("tutorialSkipBtn"),
+  exampleCycleBtn: document.getElementById("exampleCycleBtn"),
+  exampleGuessText: document.getElementById("exampleGuessText"),
+  exampleHintText: document.getElementById("exampleHintText"),
 };
 
 let currentUser = null;
@@ -235,6 +247,13 @@ let oneHintAttempts = 0;
 let oneHintHintLevel = 0;
 let oneHintSolved = false;
 let oneHintInitialized = false;
+let exampleIndex = 0;
+const EXAMPLE_GUESSES = [
+  { guess: "498", hint: "One digit is correct and one digit is correct but in the wrong place." },
+  { guess: "123", hint: "No digits match. You can safely eliminate 1, 2, and 3." },
+  { guess: "974", hint: "Three digits are correct, but all are in the wrong place." },
+  { guess: "476", hint: "Two digits are correct and in the right place. The last slot needs a different digit." },
+];
 
 init();
 
@@ -272,10 +291,12 @@ function init() {
   dom.beginnerHintsToggle.addEventListener("change", handleSettingsChange);
   dom.soundToggle.addEventListener("change", handleSettingsChange);
   dom.vibrationToggle.addEventListener("change", handleSettingsChange);
+  dom.themeSelect.addEventListener("change", handleSettingsChange);
   dom.showTutorialBtn.addEventListener("click", () => showTutorial(true));
   dom.installAppBtn.addEventListener("click", handleInstallApp);
   dom.tutorialStartBtn.addEventListener("click", completeTutorial);
   dom.tutorialSkipBtn.addEventListener("click", completeTutorial);
+  dom.exampleCycleBtn.addEventListener("click", cycleIntroExample);
   dom.profileMenuBtn.addEventListener("click", toggleProfileMenu);
   dom.usernameSetupForm.addEventListener("submit", handleUsernameSetupSubmit);
   dom.usernameInput.addEventListener("input", handleUsernameInput);
@@ -296,6 +317,15 @@ function init() {
   setGameLocked(true);
   updateTimerUi();
   registerServiceWorker();
+}
+
+function cycleIntroExample() {
+  exampleIndex = (exampleIndex + 1) % EXAMPLE_GUESSES.length;
+  const example = EXAMPLE_GUESSES[exampleIndex];
+  dom.exampleGuessText.textContent = example.guess;
+  dom.exampleHintText.textContent = example.hint;
+  replayAnimation(dom.exampleHintText, "hint-reveal");
+  playFeedback("tap");
 }
 
 function registerServiceWorker() {
@@ -384,6 +414,8 @@ function updateSettingsUi() {
   updateBeginnerCoachToggleUi();
   dom.soundToggle.checked = Boolean(settings.sound);
   dom.vibrationToggle.checked = Boolean(settings.vibration);
+  dom.themeSelect.value = settings.theme || "classic";
+  applyTheme();
   dom.installAppBtn.disabled = !deferredInstallPrompt;
   updateCoachPanel();
 }
@@ -394,9 +426,18 @@ function handleSettingsChange() {
     beginnerHints: dom.beginnerHintsToggle.checked,
     sound: dom.soundToggle.checked,
     vibration: dom.vibrationToggle.checked,
+    theme: dom.themeSelect.value,
   };
   saveSettings();
   updateSettingsUi();
+}
+
+function applyTheme() {
+  const theme = settings.theme || "classic";
+  document.body.classList.remove(...THEME_CLASS_NAMES);
+  if (theme !== "classic") {
+    document.body.classList.add(`theme-${theme}`);
+  }
 }
 
 function showSettingsPanel() {
@@ -445,7 +486,7 @@ function playFeedback(kind = "tap") {
     const oscillator = context.createOscillator();
     const gain = context.createGain();
     oscillator.type = "sine";
-    oscillator.frequency.value = kind === "win" ? 720 : 420;
+    oscillator.frequency.value = kind === "win" ? 720 : (kind === "wrong" ? 180 : 420);
     gain.gain.setValueAtTime(0.045, context.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.12);
     oscillator.connect(gain);
@@ -455,6 +496,15 @@ function playFeedback(kind = "tap") {
   } catch {
     // Feedback is optional; browsers may block audio until user interaction.
   }
+}
+
+function replayAnimation(element, className) {
+  if (!element) {
+    return;
+  }
+  element.classList.remove(className);
+  void element.offsetWidth;
+  element.classList.add(className);
 }
 
 function getSuggestedUsername() {
@@ -651,6 +701,10 @@ function updateModeUi() {
   dom.guessInput.maxLength = String(config.length);
   dom.guessInput.placeholder = config.placeholder;
   dom.timerBadge.textContent = formatTimer();
+  dom.commandMode.textContent = isDailyChallenge ? `Daily ${config.label}` : config.label;
+  dom.commandRank.textContent = dailyCompleted
+    ? "Daily complete"
+    : (isDailyChallenge ? "Ranked" : "Practice");
   dom.dailyChallengeBtn.classList.toggle("is-active", isDailyChallenge);
   dom.dailyChallengeBtn.disabled = Boolean(dailyStarted || dailyCompleted) || dom.guessInput.disabled;
   dom.dailyChallengeBtn.textContent = dailyStarted || dailyCompleted ? "Daily Played" : "Daily";
@@ -1427,7 +1481,9 @@ function formatTimer() {
 }
 
 function updateTimerUi() {
-  dom.timerBadge.textContent = formatTimer();
+  const timerText = formatTimer();
+  dom.timerBadge.textContent = timerText;
+  dom.commandTimer.textContent = timerText;
   const config = getModeConfig();
   const timedOut = config.timeLimitSeconds && getElapsedSeconds() >= config.timeLimitSeconds;
   if (timedOut && !dom.guessInput.disabled && currentUser && currentUsername) {
@@ -1779,7 +1835,25 @@ function createHistoryItem(headingText, bodyText) {
   const body = document.createElement("p");
   body.textContent = bodyText;
 
-  item.append(heading, body);
+  const chips = document.createElement("div");
+  chips.className = "history-chip-row";
+  const rightPlace = Number(String(bodyText).match(/(One|Two|Three|Four|\d+) digit[s]? .*right place/i)?.[1]
+    ?.replace(/One/i, "1").replace(/Two/i, "2").replace(/Three/i, "3").replace(/Four/i, "4")) || 0;
+  const wrongPlace = Number(String(bodyText).match(/(one|two|three|four|\d+) digit[s]? .*wrong place/i)?.[1]
+    ?.replace(/one/i, "1").replace(/two/i, "2").replace(/three/i, "3").replace(/four/i, "4")) || 0;
+  const miss = rightPlace === 0 && wrongPlace === 0;
+  [
+    { label: `${rightPlace} placed`, className: "is-hit" },
+    { label: `${wrongPlace} moved`, className: "is-near" },
+    { label: miss ? "No match" : "Keep solving", className: miss ? "is-miss" : "is-open" },
+  ].forEach((chip) => {
+    const element = document.createElement("span");
+    element.className = `history-clue-chip ${chip.className}`;
+    element.textContent = chip.label;
+    chips.append(element);
+  });
+
+  item.append(heading, chips, body);
   return item;
 }
 
@@ -2187,6 +2261,12 @@ function hideOneHintFormulaHint() {
 function updateOneHintFormulaHintUi(question = getCurrentOneHintQuestion()) {
   const hints = getOneHintHints(question);
   const canShowHint = hints.length > 0 && oneHintHintLevel < hints.length;
+  dom.oneHintSteps.hidden = hints.length === 0;
+  dom.oneHintSteps.querySelectorAll("[data-hint-step]").forEach((step) => {
+    const index = Number(step.dataset.hintStep);
+    step.classList.toggle("is-active", index <= oneHintHintLevel);
+    step.classList.toggle("is-available", index <= hints.length);
+  });
   dom.oneHintFormulaBtn.hidden = !canShowHint;
   dom.oneHintFormulaBtn.disabled = !canShowHint || oneHintSolved || !currentUser || !currentUsername;
   dom.oneHintFormulaBtn.textContent = `Hint ${Math.min(oneHintHintLevel + 1, hints.length)}${oneHintHintLevel > 0 ? ` / ${hints.length}` : ""}`;
@@ -2503,6 +2583,7 @@ function handleGuessSubmit(event) {
     const reaction = getEmojiReaction(score.correctPlace, score.wrongPlace, true);
     setEmojiReaction(reaction);
     popGuessEmoji(reaction);
+    replayAnimation(dom.guessForm, "success-pulse");
     setStatus(`🎉 You guessed it. The secret number was ${secretNumber}.`, "status-win");
     recordLeaderboardScore(attempts, elapsedSeconds);
     playFeedback("win");
@@ -2518,6 +2599,8 @@ function handleGuessSubmit(event) {
   const reaction = getEmojiReaction(score.correctPlace, score.wrongPlace, false);
   setEmojiReaction(reaction);
   popGuessEmoji(reaction);
+  replayAnimation(dom.guessForm, "wrong-shake");
+  playFeedback("wrong");
   setStatus(hint, "status-hint");
   dom.guessInput.value = "";
   saveGameState();
@@ -2926,6 +3009,19 @@ function renderLeaderboardScores(scores, boardMode, boardDaily) {
     return;
   }
 
+  const currentPlayerId = activeLeaderboardScope === "global" ? getGlobalPlayerId() : getPlayerLeaderboardId();
+  const ownIndex = scores.findIndex((score) => {
+    const scorePlayerId = score.playerId || `name:${sanitizeUsername(score.username).toLowerCase()}`;
+    return scorePlayerId === currentPlayerId;
+  });
+  if (ownIndex >= 0) {
+    const ownScore = scores[ownIndex];
+    const pin = document.createElement("div");
+    pin.className = "leaderboard-item leaderboard-item-pinned";
+    pin.innerHTML = `<span class="leaderboard-rank">You</span><strong>#${ownIndex + 1} @${sanitizeUsername(ownScore.username) || "Player"}</strong><small>${ownScore.attempts} ${ownScore.attempts === 1 ? "attempt" : "attempts"} · ${formatDuration(Number(ownScore.seconds) || 0)}</small>`;
+    dom.leaderboardList.append(pin);
+  }
+
   scores.slice(0, 5).forEach((score, index) => {
     const item = document.createElement("div");
     item.className = "leaderboard-item";
@@ -3047,6 +3143,7 @@ function appendHistoryItem(guess, hint) {
 
 function updateAttemptCount() {
   dom.attemptCount.textContent = `${attempts} ${attempts === 1 ? "attempt" : "attempts"}`;
+  dom.commandAttempts.textContent = String(attempts);
 }
 
 function setStatus(text, className) {
@@ -3067,6 +3164,9 @@ function showCelebration(secret, totalAttempts, elapsedSeconds = getElapsedSecon
   dom.celebrationAttempts.textContent = String(totalAttempts);
   dom.celebrationTime.textContent = formatDuration(elapsedSeconds);
   dom.celebrationMode.textContent = modeLabel;
+  dom.celebrationRank.textContent = isDailyChallenge
+    ? "Daily score saved locally and sent to the global board."
+    : "Score saved locally and sent to the global board.";
   dom.winCelebration.hidden = false;
 }
 
