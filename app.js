@@ -55,11 +55,27 @@ const DEFAULT_AVATAR = "https://www.gstatic.com/images/branding/product/1x/avata
 const DEFAULT_STATUS = "A new secret number is ready. Enter your first guess.";
 const DEFAULT_USERNAME_HELP = "Use 3-18 letters, numbers, or underscores.";
 const GUEST_UID = "guest-player";
+const DEFAULT_TAB_LAYOUT = ["intro", "game", "oneHint", "challenge", "rankings"];
+const TAB_LABELS = {
+  intro: "Intro & Rules",
+  game: "Hardcore Game",
+  oneHint: "One Hint",
+  challenge: "Challenge",
+  rankings: "Rankings",
+};
+const DEFAULT_LAYOUT_SLOTS = [
+  { id: "slot1", name: "Slot 1", layout: null },
+  { id: "slot2", name: "Slot 2", layout: null },
+  { id: "slot3", name: "Slot 3", layout: null },
+];
 const DEFAULT_SETTINGS = {
   beginnerHints: true,
   sound: false,
   vibration: true,
   theme: "classic",
+  tabLayout: DEFAULT_TAB_LAYOUT,
+  layoutSlots: DEFAULT_LAYOUT_SLOTS,
+  activeLayoutSlot: "slot1",
 };
 const THEME_CLASS_NAMES = ["theme-noir", "theme-arctic", "theme-gold", "theme-minimal"];
 const GAME_MODES = {
@@ -189,6 +205,12 @@ const dom = {
   soundToggle: document.getElementById("soundToggle"),
   vibrationToggle: document.getElementById("vibrationToggle"),
   themeSelect: document.getElementById("themeSelect"),
+  layoutSlotSelect: document.getElementById("layoutSlotSelect"),
+  layoutSaveSlotBtn: document.getElementById("layoutSaveSlotBtn"),
+  layoutLoadSlotBtn: document.getElementById("layoutLoadSlotBtn"),
+  layoutResetBtn: document.getElementById("layoutResetBtn"),
+  layoutBuilderList: document.getElementById("layoutBuilderList"),
+  layoutSlotStatus: document.getElementById("layoutSlotStatus"),
   showTutorialBtn: document.getElementById("showTutorialBtn"),
   installAppBtn: document.getElementById("installAppBtn"),
   signOutBtn: document.getElementById("signOutBtn"),
@@ -292,6 +314,11 @@ function init() {
   dom.soundToggle.addEventListener("change", handleSettingsChange);
   dom.vibrationToggle.addEventListener("change", handleSettingsChange);
   dom.themeSelect.addEventListener("change", handleSettingsChange);
+  dom.layoutSlotSelect.addEventListener("change", handleLayoutSlotChange);
+  dom.layoutSaveSlotBtn.addEventListener("click", handleSaveLayoutSlot);
+  dom.layoutLoadSlotBtn.addEventListener("click", handleLoadLayoutSlot);
+  dom.layoutResetBtn.addEventListener("click", handleResetLayout);
+  dom.layoutBuilderList.addEventListener("click", handleLayoutBuilderClick);
   dom.showTutorialBtn.addEventListener("click", () => showTutorial(true));
   dom.installAppBtn.addEventListener("click", handleInstallApp);
   dom.tutorialStartBtn.addEventListener("click", completeTutorial);
@@ -311,6 +338,7 @@ function init() {
   updateProfileUi();
   updateModeUi();
   updateSettingsUi();
+  applyTabLayout();
   renderLeaderboard();
   updateChallengeUi();
   renderOneHintQuestion();
@@ -390,14 +418,60 @@ function createChallengeMeta(creatorUsername = "", opponentUsername = "") {
 function loadSettings() {
   try {
     const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
-    return { ...DEFAULT_SETTINGS, ...(raw ? JSON.parse(raw) : {}) };
+    return normalizeSettings({ ...DEFAULT_SETTINGS, ...(raw ? JSON.parse(raw) : {}) });
   } catch {
-    return { ...DEFAULT_SETTINGS };
+    return normalizeSettings({ ...DEFAULT_SETTINGS });
   }
 }
 
 function saveSettings() {
   localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+}
+
+function normalizeSettings(nextSettings) {
+  return {
+    ...nextSettings,
+    tabLayout: normalizeTabLayout(nextSettings.tabLayout),
+    layoutSlots: normalizeLayoutSlots(nextSettings.layoutSlots),
+    activeLayoutSlot: DEFAULT_LAYOUT_SLOTS.some((slot) => slot.id === nextSettings.activeLayoutSlot)
+      ? nextSettings.activeLayoutSlot
+      : "slot1",
+  };
+}
+
+function normalizeTabLayout(layout) {
+  const proposedLayout = Array.isArray(layout) ? layout : DEFAULT_TAB_LAYOUT;
+  const validTabs = new Set(DEFAULT_TAB_LAYOUT);
+  const cleanLayout = proposedLayout.filter((tab) => validTabs.has(tab));
+  DEFAULT_TAB_LAYOUT.forEach((tab) => {
+    if (!cleanLayout.includes(tab)) {
+      cleanLayout.push(tab);
+    }
+  });
+  return cleanLayout;
+}
+
+function normalizeLayoutSlots(slots) {
+  const savedSlots = Array.isArray(slots) ? slots : [];
+  return DEFAULT_LAYOUT_SLOTS.map((defaultSlot) => {
+    const savedSlot = savedSlots.find((slot) => slot?.id === defaultSlot.id);
+    return {
+      ...defaultSlot,
+      ...(savedSlot || {}),
+      layout: savedSlot?.layout ? normalizeTabLayout(savedSlot.layout) : null,
+    };
+  });
+}
+
+function applyTabLayout() {
+  settings.tabLayout = normalizeTabLayout(settings.tabLayout);
+  settings.tabLayout.forEach((tabName) => {
+    const tabButton = dom.gamePageTabs.querySelector(`[data-tab="${tabName}"]`);
+    if (tabButton) {
+      dom.gamePageTabs.appendChild(tabButton);
+    }
+  });
+  setActivePageTab(activePageTab);
 }
 
 function isBeginnerCoachAvailable() {
@@ -413,11 +487,14 @@ function updateBeginnerCoachToggleUi() {
 }
 
 function updateSettingsUi() {
+  settings = normalizeSettings(settings);
   dom.beginnerHintsToggle.checked = Boolean(settings.beginnerHints);
   updateBeginnerCoachToggleUi();
   dom.soundToggle.checked = Boolean(settings.sound);
   dom.vibrationToggle.checked = Boolean(settings.vibration);
   dom.themeSelect.value = settings.theme || "classic";
+  dom.layoutSlotSelect.value = settings.activeLayoutSlot || "slot1";
+  renderLayoutBuilder();
   applyTheme();
   dom.installAppBtn.disabled = !deferredInstallPrompt;
   updateCoachPanel();
@@ -431,8 +508,130 @@ function handleSettingsChange() {
     vibration: dom.vibrationToggle.checked,
     theme: dom.themeSelect.value,
   };
+  settings = normalizeSettings(settings);
   saveSettings();
   updateSettingsUi();
+}
+
+function renderLayoutBuilder() {
+  dom.layoutBuilderList.textContent = "";
+  normalizeTabLayout(settings.tabLayout).forEach((tabName, index, layout) => {
+    const item = document.createElement("div");
+    item.className = "layout-builder-item";
+
+    const label = document.createElement("button");
+    label.className = "layout-builder-label";
+    label.type = "button";
+    label.dataset.layoutAction = "first";
+    label.dataset.layoutTab = tabName;
+    label.innerHTML = `<span>${index + 1}</span><strong>${TAB_LABELS[tabName]}</strong>`;
+
+    const actions = document.createElement("div");
+    actions.className = "layout-builder-actions";
+    actions.append(
+      createLayoutButton("up", tabName, "Up", index === 0),
+      createLayoutButton("down", tabName, "Down", index === layout.length - 1)
+    );
+
+    item.append(label, actions);
+    dom.layoutBuilderList.appendChild(item);
+  });
+}
+
+function createLayoutButton(action, tabName, label, disabled) {
+  const button = document.createElement("button");
+  button.className = "mini-ghost-btn";
+  button.type = "button";
+  button.textContent = label;
+  button.dataset.layoutAction = action;
+  button.dataset.layoutTab = tabName;
+  button.disabled = disabled;
+  return button;
+}
+
+function handleLayoutBuilderClick(event) {
+  if (!(event.target instanceof Element)) {
+    return;
+  }
+  const target = event.target.closest("[data-layout-action]");
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+
+  const tabName = target.dataset.layoutTab;
+  const action = target.dataset.layoutAction;
+  const nextLayout = normalizeTabLayout(settings.tabLayout);
+  const currentIndex = nextLayout.indexOf(tabName);
+  if (currentIndex === -1) {
+    return;
+  }
+
+  if (action === "up" && currentIndex > 0) {
+    [nextLayout[currentIndex - 1], nextLayout[currentIndex]] = [nextLayout[currentIndex], nextLayout[currentIndex - 1]];
+  } else if (action === "down" && currentIndex < nextLayout.length - 1) {
+    [nextLayout[currentIndex + 1], nextLayout[currentIndex]] = [nextLayout[currentIndex], nextLayout[currentIndex + 1]];
+  } else if (action === "first" && currentIndex > 0) {
+    nextLayout.splice(currentIndex, 1);
+    nextLayout.unshift(tabName);
+  } else {
+    return;
+  }
+
+  settings.tabLayout = nextLayout;
+  saveSettings();
+  applyTabLayout();
+  renderLayoutBuilder();
+  setLayoutSlotStatus("Custom setup applied.");
+  playFeedback("tap");
+}
+
+function handleLayoutSlotChange() {
+  settings.activeLayoutSlot = dom.layoutSlotSelect.value;
+  saveSettings();
+  const selectedSlot = getActiveLayoutSlot();
+  setLayoutSlotStatus(selectedSlot?.layout ? `${selectedSlot.name} is ready to load.` : `${selectedSlot?.name || "Slot"} is empty.`);
+}
+
+function handleSaveLayoutSlot() {
+  const selectedSlotId = dom.layoutSlotSelect.value;
+  settings.layoutSlots = normalizeLayoutSlots(settings.layoutSlots).map((slot) => (
+    slot.id === selectedSlotId ? { ...slot, layout: normalizeTabLayout(settings.tabLayout) } : slot
+  ));
+  settings.activeLayoutSlot = selectedSlotId;
+  saveSettings();
+  setLayoutSlotStatus(`${getActiveLayoutSlot()?.name || "Slot"} saved.`);
+  playFeedback("win");
+}
+
+function handleLoadLayoutSlot() {
+  const selectedSlot = getActiveLayoutSlot();
+  if (!selectedSlot?.layout) {
+    setLayoutSlotStatus(`${selectedSlot?.name || "This slot"} is empty. Save a setup there first.`);
+    return;
+  }
+  settings.tabLayout = normalizeTabLayout(selectedSlot.layout);
+  saveSettings();
+  applyTabLayout();
+  renderLayoutBuilder();
+  setLayoutSlotStatus(`${selectedSlot.name} loaded.`);
+  playFeedback("tap");
+}
+
+function handleResetLayout() {
+  settings.tabLayout = [...DEFAULT_TAB_LAYOUT];
+  saveSettings();
+  applyTabLayout();
+  renderLayoutBuilder();
+  setLayoutSlotStatus("Default tab setup restored.");
+  playFeedback("tap");
+}
+
+function getActiveLayoutSlot() {
+  return normalizeLayoutSlots(settings.layoutSlots).find((slot) => slot.id === (settings.activeLayoutSlot || "slot1"));
+}
+
+function setLayoutSlotStatus(message) {
+  dom.layoutSlotStatus.textContent = message;
 }
 
 function applyTheme() {

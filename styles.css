@@ -2283,6 +2283,104 @@ button:disabled,
   gap: 12px;
 }
 
+.layout-builder-card {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: rgba(15, 23, 42, 0.46);
+}
+
+.layout-builder-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.layout-builder-head span {
+  display: grid;
+  gap: 4px;
+}
+
+.layout-builder-head strong {
+  color: var(--text);
+}
+
+.layout-builder-head small,
+.layout-slot-status {
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.layout-builder-list {
+  display: grid;
+  gap: 8px;
+}
+
+.layout-builder-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.layout-builder-label {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 10px;
+  color: var(--text);
+  text-align: left;
+}
+
+.layout-builder-label span {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: rgba(125, 211, 252, 0.13);
+  color: var(--cyan);
+  font-weight: 800;
+}
+
+.layout-builder-label strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.layout-builder-actions,
+.layout-slot-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.layout-builder-actions .mini-ghost-btn {
+  min-width: 62px;
+}
+
+.layout-builder-actions .mini-ghost-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.layout-slot-status {
+  min-height: 1.25em;
+  font-size: 0.82rem;
+}
+
 .command-center div {
   padding: 12px 14px;
   border: 1px solid var(--line);
@@ -2512,6 +2610,30 @@ body.theme-minimal {
 
   .settings-page-card .settings-grid {
     grid-template-columns: 1fr;
+  }
+
+  .layout-builder-head,
+  .layout-builder-item {
+    grid-template-columns: 1fr;
+  }
+
+  .layout-builder-head {
+    display: grid;
+  }
+
+  .layout-builder-head .settings-select {
+    width: 100%;
+  }
+
+  .layout-builder-actions,
+  .layout-slot-actions {
+    justify-content: stretch;
+  }
+
+  .layout-builder-actions .mini-ghost-btn,
+  .layout-slot-actions .mini-ghost-btn {
+    flex: 1;
+    justify-content: center;
   }
 
   .interactive-example .mini-ghost-btn {

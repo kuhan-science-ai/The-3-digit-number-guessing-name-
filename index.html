@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css?v=20260518-settings-1" />
+  <link rel="stylesheet" href="./styles.css?v=20260518-layout-1" />
   <script>
     window.MathJax = {
       tex: {
@@ -555,6 +555,26 @@
                 <option value="minimal">Minimal Dark</option>
               </select>
             </label>
+            <section class="layout-builder-card" aria-labelledby="layoutBuilderTitle">
+              <div class="layout-builder-head">
+                <span>
+                  <strong id="layoutBuilderTitle">Custom tab setup</strong>
+                  <small>Click a tab name to move it first, or use Up and Down to place every section exactly where you want it.</small>
+                </span>
+                <select id="layoutSlotSelect" class="settings-select" aria-label="Layout save slot">
+                  <option value="slot1">Slot 1</option>
+                  <option value="slot2">Slot 2</option>
+                  <option value="slot3">Slot 3</option>
+                </select>
+              </div>
+              <div id="layoutBuilderList" class="layout-builder-list" aria-label="Current tab order"></div>
+              <div class="layout-slot-actions">
+                <button id="layoutSaveSlotBtn" class="mini-ghost-btn" type="button">Save Slot</button>
+                <button id="layoutLoadSlotBtn" class="mini-ghost-btn" type="button">Load Slot</button>
+                <button id="layoutResetBtn" class="mini-ghost-btn" type="button">Reset Default</button>
+              </div>
+              <p id="layoutSlotStatus" class="layout-slot-status" aria-live="polite">Your current setup is active.</p>
+            </section>
             <label class="setting-row">
               <span>
                 <strong>Show tutorial</strong>
@@ -575,7 +595,7 @@
     </section>
   </main>
 
-  <script type="module" src="./app.js?v=20260518-settings-1"></script>
+  <script type="module" src="./app.js?v=20260518-layout-1"></script>
 </body>
 </html>
 
