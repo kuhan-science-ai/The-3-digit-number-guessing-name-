@@ -345,7 +345,7 @@ function handleGamePageTabClick(event) {
 }
 
 function setActivePageTab(tabName) {
-  activePageTab = ["intro", "game", "oneHint", "challenge", "rankings"].includes(tabName) ? tabName : "intro";
+  activePageTab = ["intro", "game", "oneHint", "challenge", "rankings", "settings"].includes(tabName) ? tabName : "intro";
   dom.gamePageTabs.querySelectorAll("[data-tab]").forEach((button) => {
     const isActive = button.dataset.tab === activePageTab;
     button.classList.toggle("is-active", isActive);
@@ -357,6 +357,7 @@ function setActivePageTab(tabName) {
   dom.oneHintTabPanel.classList.toggle("is-active", activePageTab === "oneHint");
   dom.challengeTabPanel.classList.toggle("is-active", activePageTab === "challenge");
   dom.rankingsTabPanel.classList.toggle("is-active", activePageTab === "rankings");
+  dom.settingsPanel.classList.toggle("is-active", activePageTab === "settings");
 
   if (activePageTab === "game") {
     dom.guessInput.focus();
@@ -366,6 +367,8 @@ function setActivePageTab(tabName) {
     dom.challengeOpponentInput.focus();
   } else if (activePageTab === "rankings") {
     renderLeaderboard();
+  } else if (activePageTab === "settings") {
+    dom.themeSelect.focus();
   }
 }
 
@@ -443,11 +446,11 @@ function applyTheme() {
 function showSettingsPanel() {
   dom.profileDropdown.hidden = true;
   dom.profileMenuBtn.setAttribute("aria-expanded", "false");
-  dom.settingsPanel.hidden = false;
+  setActivePageTab("settings");
 }
 
 function hideSettingsPanel() {
-  dom.settingsPanel.hidden = true;
+  setActivePageTab("game");
 }
 
 function handleBeforeInstallPrompt(event) {

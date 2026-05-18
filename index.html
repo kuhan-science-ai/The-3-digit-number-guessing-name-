@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css?v=20260518-premium-1" />
+  <link rel="stylesheet" href="./styles.css?v=20260518-settings-1" />
   <script>
     window.MathJax = {
       tex: {
@@ -308,66 +308,6 @@
             </div>
           </section>
 
-          <section id="settingsPanel" class="settings-panel" hidden>
-            <div class="tracker-top">
-              <div>
-                <p class="mini-label">Settings</p>
-                <h3>Player options</h3>
-              </div>
-              <button id="settingsCloseBtn" class="mini-ghost-btn" type="button">Close</button>
-            </div>
-            <div class="settings-grid">
-              <label class="setting-row">
-                <span>
-                  <strong>Beginner coach</strong>
-                  <small>Extra learning tips after each non-daily guess.</small>
-                </span>
-                <input id="beginnerHintsToggle" type="checkbox" />
-              </label>
-              <label class="setting-row">
-                <span>
-                  <strong>Sound feedback</strong>
-                  <small>Soft keypad and win sounds.</small>
-                </span>
-                <input id="soundToggle" type="checkbox" />
-              </label>
-              <label class="setting-row">
-                <span>
-                  <strong>Mobile vibration</strong>
-                  <small>Small vibration on keypad and wins where supported.</small>
-                </span>
-                <input id="vibrationToggle" type="checkbox" />
-              </label>
-              <label class="setting-row setting-row-select">
-                <span>
-                  <strong>Visual theme</strong>
-                  <small>Change the board style without changing the layout.</small>
-                </span>
-                <select id="themeSelect" class="settings-select">
-                  <option value="classic">Classic</option>
-                  <option value="noir">Cipher Noir</option>
-                  <option value="arctic">Arctic Glass</option>
-                  <option value="gold">Gold Vault</option>
-                  <option value="minimal">Minimal Dark</option>
-                </select>
-              </label>
-              <label class="setting-row">
-                <span>
-                  <strong>Show tutorial</strong>
-                  <small>Open the quick-start guide again.</small>
-                </span>
-                <button id="showTutorialBtn" class="mini-ghost-btn" type="button">Open</button>
-              </label>
-              <label class="setting-row">
-                <span>
-                  <strong>Install app</strong>
-                  <small>Add the game to your phone or desktop.</small>
-                </span>
-                <button id="installAppBtn" class="mini-ghost-btn" type="button" disabled>Install</button>
-              </label>
-            </div>
-          </section>
-
           <section class="mode-panel">
             <div class="tracker-top">
               <div>
@@ -569,10 +509,73 @@
           </div>
         </section>
       </section>
+
+      <section id="settingsPanel" class="settings-page-panel tab-panel">
+        <div class="settings-page-header">
+          <div>
+            <p class="mini-label">Settings</p>
+            <h2>Player options</h2>
+          </div>
+          <button id="settingsCloseBtn" class="mini-ghost-btn" type="button">Back to Game</button>
+        </div>
+
+        <section class="settings-panel settings-page-card">
+          <div class="settings-grid">
+            <label class="setting-row">
+              <span>
+                <strong>Beginner coach</strong>
+                <small>Extra learning tips after each non-daily guess.</small>
+              </span>
+              <input id="beginnerHintsToggle" type="checkbox" />
+            </label>
+            <label class="setting-row">
+              <span>
+                <strong>Sound feedback</strong>
+                <small>Soft keypad and win sounds.</small>
+              </span>
+              <input id="soundToggle" type="checkbox" />
+            </label>
+            <label class="setting-row">
+              <span>
+                <strong>Mobile vibration</strong>
+                <small>Small vibration on keypad and wins where supported.</small>
+              </span>
+              <input id="vibrationToggle" type="checkbox" />
+            </label>
+            <label class="setting-row setting-row-select">
+              <span>
+                <strong>Visual theme</strong>
+                <small>Change the board style without changing the layout.</small>
+              </span>
+              <select id="themeSelect" class="settings-select">
+                <option value="classic">Classic</option>
+                <option value="noir">Cipher Noir</option>
+                <option value="arctic">Arctic Glass</option>
+                <option value="gold">Gold Vault</option>
+                <option value="minimal">Minimal Dark</option>
+              </select>
+            </label>
+            <label class="setting-row">
+              <span>
+                <strong>Show tutorial</strong>
+                <small>Open the quick-start guide again.</small>
+              </span>
+              <button id="showTutorialBtn" class="mini-ghost-btn" type="button">Open</button>
+            </label>
+            <label class="setting-row">
+              <span>
+                <strong>Install app</strong>
+                <small>Add the game to your phone or desktop.</small>
+              </span>
+              <button id="installAppBtn" class="mini-ghost-btn" type="button" disabled>Install</button>
+            </label>
+          </div>
+        </section>
+      </section>
     </section>
   </main>
 
-  <script type="module" src="./app.js?v=20260518-premium-1"></script>
+  <script type="module" src="./app.js?v=20260518-settings-1"></script>
 </body>
 </html>
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = "three-digit-duel-premium-v1";
+const CACHE_NAME = "three-digit-duel-settings-v1";
 const APP_SHELL = [
   "/",
   "/signin",
